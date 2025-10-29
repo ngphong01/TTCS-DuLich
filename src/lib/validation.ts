@@ -23,11 +23,24 @@ export const ReviewCreateSchema = z.object({
 
 export const BookingCreateSchema = z.object({
   destination: z.string().optional(),
+  destinationName: z.string().optional(),
   guests: z.number().min(1),
   from: z.string().optional(),
   to: z.string().optional(),
   name: z.string().min(1),
   email: z.string().email(),
+  // Digits only, exactly 13 numbers
+  phone: z
+    .string()
+    .regex(/^[0-9]{13}$/i, { message: "Số điện thoại phải gồm đúng 13 số" })
+    .optional(),
   note: z.string().optional(),
   price: z.number().min(0),
+  // Payment breakdown (optional; server will compute sensible defaults)
+  paymentMethod: z.string().optional(),
+  couponCode: z.string().optional(),
+  discountAmount: z.number().min(0).optional(),
+  serviceFee: z.number().min(0).optional(),
+  tax: z.number().min(0).optional(),
+  totalAmount: z.number().min(0).optional(),
 });

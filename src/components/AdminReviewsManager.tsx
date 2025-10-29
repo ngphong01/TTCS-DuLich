@@ -23,8 +23,9 @@ export default function AdminReviewsManager({ initialItems }: { initialItems: Re
         throw new Error(d.error || "Xóa đánh giá thất bại");
       }
       setItems((prev) => prev.filter((r) => r.id !== id));
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      const error = e as { message?: string };
+      setError(error.message || "Có lỗi xảy ra");
     }
   };
 

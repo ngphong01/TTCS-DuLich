@@ -30,8 +30,9 @@ export default function AccountSecurityPage() {
         throw new Error(d.error || "Đổi mật khẩu thất bại");
       }
       setOk(true);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      const error = e as { message?: string };
+      setError(error.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }

@@ -22,6 +22,7 @@ export default function CheckoutForm({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [result, setResult] = useState<{ id: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,13 +60,35 @@ export default function CheckoutForm({
 
   const payStripe = async () => {
     if (!result?.id) return;
-    const res = await fetch("/api/checkout/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId: result.id }),
-    });
-    const data = await res.json();
-    if (data?.url) window.location.href = data.url;
+    
+    setPaying(true);
+    setError(null);
+    
+    try {
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: result.id }),
+      });
+      
+      const data = await res.json();
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (data?.error) {
+        if (data.error === "Stripe not configured") {
+          setError("Hệ thống thanh toán chưa được cấu hình. Vui lòng liên hệ admin.");
+        } else {
+          setError(`Lỗi thanh toán: ${data.error}`);
+        }
+      } else {
+        setError("Không thể tạo phiên thanh toán. Vui lòng thử lại.");
+      }
+    } catch (err) {
+      setError("Không thể kết nối đến hệ thống thanh toán. Vui lòng thử lại.");
+    } finally {
+      setPaying(false);
+    }
   };
 
   return (
@@ -128,8 +151,12 @@ export default function CheckoutForm({
             {submitting ? "Đang xử lý..." : "Lưu đặt chỗ"}
           </button>
           {result && (
-            <button className="btn" onClick={payStripe}>
-              Thanh toán Stripe
+            <button 
+              className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+              onClick={payStripe}
+              disabled={paying}
+            >
+              {paying ? "Đang xử lý..." : "Thanh toán Stripe"}
             </button>
           )}
         </div>

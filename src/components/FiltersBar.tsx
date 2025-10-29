@@ -7,14 +7,18 @@ export default function FiltersBar() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const countries = useMemo(
-    () => Array.from(new Set(DESTINATIONS.map((d) => d.country))).sort(),
-    []
-  );
-  const tags = useMemo(
-    () => Array.from(new Set(DESTINATIONS.flatMap((d) => d.tags))).sort(),
-    []
-  );
+  // Prefer server-provided filters if present in URL (preloaded by page)
+  const countries = useMemo(() => {
+    const fromUrl = (sp.get("countriesOptions") || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (fromUrl.length) return fromUrl;
+    return Array.from(new Set(DESTINATIONS.map((d) => d.country))).sort();
+  }, [sp]);
+
+  const tags = useMemo(() => {
+    const fromUrl = (sp.get("tagsOptions") || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (fromUrl.length) return fromUrl;
+    return Array.from(new Set(DESTINATIONS.flatMap((d) => d.tags))).sort();
+  }, [sp]);
 
   const pushParams = (params: URLSearchParams) => {
     // Reset về trang 1 khi thay đổi filter
@@ -96,6 +100,16 @@ export default function FiltersBar() {
             className="w-full rounded border border-black/[.08] dark:border-white/[.145] bg-transparent px-3 py-2"
           />
         </div>
+        <div>
+          <label className="text-xs font-medium">Tìm kiếm</label>
+          <input
+            type="text"
+            placeholder="Tên tour, quốc gia, tag..."
+            value={sp.get("q") || ""}
+            onChange={(e) => update("q", e.target.value || undefined)}
+            className="w-full rounded border border-black/[.08] dark:border-white/[.145] bg-transparent px-3 py-2"
+          />
+        </div>
       </div>
 
       <div>
@@ -110,8 +124,8 @@ export default function FiltersBar() {
                 onClick={() => toggleCountry(c)}
                 className={`text-sm/6 rounded-full px-3 py-1 border transition ${
                   active
-                    ? "bg-foreground text-background border-transparent"
-                    : "border-black/[.08] dark:border-white/[.145] hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]"
+                    ? "bg-blue-600 text-white border-transparent"
+                    : "border-black/[.08] dark:border-white/[.145] hover:bg-blue-50 dark:hover:bg-[#1a1a1a]"
                 }`}
                 aria-pressed={active}
               >
@@ -134,8 +148,8 @@ export default function FiltersBar() {
                 onClick={() => toggleTag(t)}
                 className={`text-sm/6 rounded-full px-3 py-1 border transition ${
                   active
-                    ? "bg-foreground text-background border-transparent"
-                    : "border-black/[.08] dark:border-white/[.145] hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]"
+                    ? "bg-blue-600 text-white border-transparent"
+                    : "border-black/[.08] dark:border-white/[.145] hover:bg-blue-50 dark:hover:bg-[#1a1a1a]"
                 }`}
                 aria-pressed={active}
               >

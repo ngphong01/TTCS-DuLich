@@ -1,24 +1,53 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/simple-auth";
+import { db } from "@/lib/mysql";
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-  const name = String((body as any).name || "").trim();
-  const image = String((body as any).image || "").trim();
+    const body = await request.json().catch(() => ({}));
+    const { name, image, phone, birthday, gender, country } = body as Record<string, unknown>;
 
-  const updated = await prisma.user.update({
-    where: { email: session.user.email },
-    data: {
-      name: name || null,
-      image: image || null,
-    },
-  });
+    // Update basic user fields (assuming a `user` table with these columns)
+    await db.executeQuery(
+      `UPDATE user SET 
+        name = COALESCE(?, name),
+        image = COALESCE(?, image),
+        phone = COALESCE(?, phone),
+        birthday = COALESCE(?, birthday),
+        gender = COALESCE(?, gender),
+        country = COALESCE(?, country)
+       WHERE id = ?`,
+      [name ?? null, image ?? null, phone ?? null, birthday ?? null, gender ?? null, country ?? null, session.user.id]
+    );
 
-  return NextResponse.json({ ok: true, name: updated.name, image: updated.image });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("/api/account/profile POST error", error);
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+  }
 }
+
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rows = await db.executeQuery(
+      `SELECT id, email, name, image, phone, birthday, gender, country FROM user WHERE id = ? LIMIT 1`,
+      [session.user.id]
+    );
+    return NextResponse.json(rows[0] || {});
+  } catch (error) {
+    console.error("/api/account/profile GET error", error);
+    return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
+  }
+}
+
+

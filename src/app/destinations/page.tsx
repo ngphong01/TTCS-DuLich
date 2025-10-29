@@ -23,7 +23,7 @@ async function fetchDestinations(searchParams: Search) {
   const url = `/api/destinations?${params.toString()}`;
   try {
     const res = await fetch(url, {
-      // cache: "no-store"  // uncomment to disable caching
+      cache: "no-store",
     });
     if (res.ok) {
       return res.json() as Promise<{
@@ -107,18 +107,19 @@ async function fetchDestinations(searchParams: Search) {
 export default async function DestinationsPage({
   searchParams,
 }: {
-  searchParams?: Search;
+  searchParams?: Promise<Search>;
 }) {
-  const pageSize = Math.max(1, Number(searchParams?.pageSize || 9));
-  const data = await fetchDestinations({ ...(searchParams || {}), pageSize: String(pageSize) });
+  const resolvedSearchParams = await searchParams;
+  const pageSize = Math.max(1, Number(resolvedSearchParams?.pageSize || 9));
+  const data = await fetchDestinations({ ...(resolvedSearchParams || {}), pageSize: String(pageSize) });
 
   return (
     <main className="mx-auto max-w-6xl px-4 sm:px-6">
       <h1 className="text-2xl sm:text-3xl font-bold mt-8">Danh sách điểm đến</h1>
-      {(searchParams?.from || searchParams?.to || searchParams?.q) && (
+      {(resolvedSearchParams?.from || resolvedSearchParams?.to || resolvedSearchParams?.q) && (
         <p className="text-sm/6 text-foreground/70 mt-2">
-          Kết quả cho: {searchParams?.q && `"${searchParams.q}"`} {searchParams?.from && `• từ ${searchParams.from}`}{" "}
-          {searchParams?.to && `• đến ${searchParams.to}`}
+          Kết quả cho: {resolvedSearchParams?.q && `"${resolvedSearchParams.q}"`} {resolvedSearchParams?.from && `• từ ${resolvedSearchParams.from}`}{" "}
+          {resolvedSearchParams?.to && `• đến ${resolvedSearchParams.to}`}
         </p>
       )}
 
@@ -132,7 +133,7 @@ export default async function DestinationsPage({
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
         {data.items.map((d) => (
-          <DestinationCard key={d.slug} d={d as any} />
+          <DestinationCard key={d.slug} d={d} />
         ))}
         {data.items.length === 0 && (
           <div className="rounded-xl border border-black/[.08] dark:border-white/[.145] p-6">

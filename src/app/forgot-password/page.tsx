@@ -1,89 +1,167 @@
 "use client";
-import { useEffect, useState } from "react";
 
-declare global {
-  interface Window {
-    turnstile?: any;
-  }
-}
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
-    if (!siteKey) return;
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    script.async = true;
-    document.body.appendChild(script);
-    const render = () => {
-      if (!window.turnstile) return;
-      window.turnstile.render("#captcha", {
-        sitekey: siteKey,
-        callback: (token: string) => setCaptchaToken(token),
-      });
-    };
-    script.onload = render;
-    const t = setTimeout(render, 1000);
-    return () => clearTimeout(t);
-  }, []);
-
-  const submit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setError(null);
-    setSent(false);
+
+    if (!email) {
+      setError('Please enter your email address');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch("/api/auth/forgot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, turnstileToken: captchaToken }),
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Gửi yêu cầu thất bại");
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSuccess(true);
+      } else {
+        setError(data.error || 'Failed to send reset email');
       }
-      setSent(true);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (err) {
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <main className="container">
-      <div className="mt-16 max-w-md mx-auto card p-6 animate-soft-pop">
-        <h1 className="text-2xl font-bold">Quên mật khẩu</h1>
-        <p className="text-sm/6 text-foreground/70 mt-1">Nhập email để nhận liên kết đặt lại mật khẩu.</p>
-
-        <form onSubmit={submit} className="mt-4 grid gap-3">
-          <label className="text-xs font-medium">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value.toLowerCase())}
-            className="rounded border border-black/[.08] dark:border-white/[.145] px-3 py-2 bg-transparent"
-          />
-
-          <div id="captcha" className="mt-2" />
-
-          <button className="btn btn-primary disabled:opacity-70" disabled={loading || !email}>
-            {loading ? "Đang gửi..." : "Gửi liên kết đặt lại"}
-          </button>
-          {sent && <p className="text-xs/6 text-green-700">Nếu email tồn tại, liên kết đặt lại đã được gửi.</p>}
-          {error && <p className="text-xs/6 text-red-600">{error}</p>}
-        </form>
-
-        <p className="text-xs/6 mt-4">
-          <a href="/signin" className="underline">Quay lại đăng nhập</a>
-        </p>
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+            <p className="text-gray-600 mb-6">
+              If an account with that email exists, we've sent you a password reset link.
+            </p>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-green-800 text-sm">
+                Please check your email and click the reset link to continue.
+              </p>
+            </div>
+            <div className="mt-6 space-y-3">
+              <Link 
+                href="/signin" 
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                Back to Sign In
+              </Link>
+              <button
+                onClick={() => {
+                  setSuccess(false);
+                  setEmail('');
+                }}
+                className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                Try Another Email
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </main>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot Your Password?</h2>
+          <p className="text-gray-600 mb-8">
+            No worries! Enter your email address and we'll send you a link to reset your password.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Sending Reset Link...
+                </div>
+              ) : (
+                'Send Reset Link'
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center space-y-3">
+            <Link 
+              href="/signin" 
+              className="text-blue-600 hover:text-blue-500 text-sm font-medium"
+            >
+              ← Back to Sign In
+            </Link>
+            <div className="text-gray-500 text-xs">
+              Remember your password?{' '}
+              <Link href="/signin" className="text-blue-600 hover:text-blue-500">
+                Sign in here
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

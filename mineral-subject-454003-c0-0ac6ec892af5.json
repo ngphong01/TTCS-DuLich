@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "mineral-subject-454003-c0",
+  "private_key_id": "0ac6ec892af5340d60937bda2e11f8c0d7236f91",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC1PDSJUw/z5S1T\nWcYgk1ETCmAh/Ary8c/xvmGq/pEJBkgr4s2rMJ/dxwLOuQe576LnuGeSiXnWT/fp\nUNTgiSyQPTIhjrXDB8Xnudoq8q7CFEfeMynUtEh24DBt77Ap1i7NPXDWmVd6NTAf\nyYN0z6ecRworO6wW7cjFOJOhMelkzuUUisUCBZ4sUe2YBC5FLJhX9bzqhRWp3f5W\nKSfFWjlIQ3B5/OACRsFZGzC3p2n0hoHuf998PIyUAljvhGiZSPYfpU639g8aVQmm\nW18tGqsI60gsWTZgp8x2lCQOM8KO8w+GqQPhNXwj7uWz880LM4wJ+tfeQHJANr3G\n3ahWYWzBAgMBAAECggEATp/FTPQHfjAk1z2hmf0/FWsRZHzzBQ2JwF7vAR86LXeX\ntM5KmmNYX37YRXV5GB2Rh0R1TlmszSBZNVN3Xsez2QlrZ6qBSRBkt5BlyO8KiLEC\nsq9wjNH/g+7jo7Xxr1y3ZhurCbZxgFd1vryN9o2lscMR8sqK8FGNIZ5XUX2VOsFY\nB+pTxkRh+B3xO6AP09amviAPSFlTVPmlQibmWzzlc+F+LFqDYyplPBjmobKbydV0\nuzODrhefSd+xP59aIKncylY8bzKjkR1EGbljlysstHKn9u5NAwGOkkDCzuomPi1N\n4cZzBu4nhMHU47dfsYYg386fI+7Eu5kFRdViqhhAXwKBgQD633ak/xuLHBTxEKKA\nW/IYs8FRiTdkZGk6pSrY0PDvfg4U8R+LIv0MkfWFpmNE/38S9uluEg9xJoM7s7mo\n1jkmL4zv4AI8C19j/SEHshBQA31cuhF5Qsq6vzOwq7L5cZerKG/rSJT+3g5NjqaS\nEuTItTL3oei64oW0vH0jki5FVwKBgQC48GfX61J73dtJ8OJpTiM7NTHtGAy3nvmc\n/4Mfj3f0RoT9Q1sTenUdphHCE5dyJljGoS6geUTTM44q/lVnyYt4byt3Oi1vTeQF\nCFRLDxeqLNUibLV0RU9UnAYZOsueA3zgtZ0jTHSCYQtFvWINmo3Z5DrF7ytaAhl+\nNlDLAMe3pwKBgCAX9lWlTSC+tu8f8an6GT6PwGtt4mg1cEDQYGrcT/ZTafnD3wUt\ntLGm+oHeh1SMWvVSIQqzxMX051T76QRwY18/Ngh5389OpSVlfJQ/c1bJG4CBTTr2\nEHlTfIldbcf7gCulQKwY3Pa98ZZ6aVTGlf4XMC39yIgf8nrsohWq3cCBAoGAVnLy\nZ8k1vncfqbmzbHw9FdEw7F6gmzjx/8Sk25zp+sL4KZdRvJIyqtBVXr5fvdlVCEyS\nCiuF06A25bwL2j8pNfvpeos0b+IeI4gYNxnv+vmIC9Z7H8XCZo+kfiiww8Vnm3bp\n5HU5xTRt24TCkA9eHauFGb9KKYHvvsLPE4Xi1eMCgYEA6ADRKpxI9UpEWTK5nuIl\novAjCWR046wJ3ACuBMNzBTgDBOv7sjoM86L0pCbIRtKYgBhuK5yLtG3R7CepN0wu\n2HQFKz6DSEW8f9zj4SwFh2wqEwCZsF4SmVIj5JaFQzQ9i/8GB5Yw4pZE/bfmTi/s\nsdFNr8g9cjIsG4+bOTC+MTk=\n-----END PRIVATE KEY-----\n",
+  "client_email": "travelgo@mineral-subject-454003-c0.iam.gserviceaccount.com",
+  "client_id": "109069875999256141301",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/travelgo%40mineral-subject-454003-c0.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

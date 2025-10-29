@@ -5,8 +5,9 @@ import { DESTINATIONS } from "../../../data/destinations";
 import MapEmbed from "../../../components/MapEmbed";
 import ReviewsSection from "../../../components/ReviewsSection";
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const d = DESTINATIONS.find((x) => x.slug === params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const d = DESTINATIONS.find((x) => x.slug === resolvedParams.slug);
   if (!d) {
     return {
       title: "Điểm đến không tồn tại - TravelGo",
@@ -24,12 +25,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default function DestinationDetail({
+export default async function DestinationDetail({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const d = DESTINATIONS.find((x) => x.slug === params.slug);
+  const resolvedParams = await params;
+  const d = DESTINATIONS.find((x) => x.slug === resolvedParams.slug);
 
   if (!d) {
     return (
@@ -68,7 +70,7 @@ export default function DestinationDetail({
             <p className="text-sm/6 text-foreground/70 mt-2">{d.description}</p>
             <div className="mt-3 flex items-center gap-3">
               <span className="text-sm/6 rounded-full px-2 py-1 border border-black/[.08] dark:border-white/[.145]">⭐ {d.rating}</span>
-              <span className="font-mono text-sm/6">Từ ${d.price}</span>
+              <span className="font-mono text-sm/6">Từ {d.price.toLocaleString('vi-VN')} VNĐ</span>
               <span className="text-sm/6">{d.country}</span>
             </div>
           </div>

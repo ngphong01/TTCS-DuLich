@@ -1,7 +1,15 @@
 "use client";
-import { SessionProvider } from "next-auth/react";
-import React from "react";
+import { ReactNode } from "react";
+import { SimpleAuthProvider } from "@/lib/use-simple-auth";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>;
+interface ProvidersProps {
+  children: ReactNode;
+}
+
+export default function Providers({ children }: ProvidersProps) {
+  return (
+    <SimpleAuthProvider>
+      {children}
+    </SimpleAuthProvider>
+  );
 }

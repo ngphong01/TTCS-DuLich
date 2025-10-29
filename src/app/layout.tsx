@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import NavBar from "../components/NavBar";
-import Footer from "../components/Footer";
 import Providers from "../components/Providers";
+import ConditionalLayout from "../components/ConditionalLayout";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -21,6 +20,13 @@ export const metadata: Metadata = {
   description: "Khám phá điểm đến, lên kế hoạch và đặt chỗ cho hành trình của bạn.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,8 +34,8 @@ export default function RootLayout({
 }>) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   return (
-    <html lang="vi">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="vi" suppressHydrationWarning={true}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning={true}>
         {/* GA4 */}
         {gaId && (
           <>
@@ -46,9 +52,9 @@ export default function RootLayout({
         )}
 
         <Providers>
-          <NavBar />
-          {children}
-          <Footer />
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
         </Providers>
       </body>
     </html>

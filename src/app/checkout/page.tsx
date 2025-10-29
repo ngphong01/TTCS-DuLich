@@ -1,27 +1,28 @@
 import { DESTINATIONS } from "../../data/destinations";
-import CheckoutForm from "../../components/CheckoutForm";
+import EnhancedCheckoutForm from "../../components/EnhancedCheckoutForm";
 
-export default function CheckoutPage({
+export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams?: { destination?: string; guests?: string; from?: string; to?: string };
+  searchParams?: Promise<{ destination?: string; guests?: string; from?: string; to?: string }>;
 }) {
-  const destSlug = searchParams?.destination || "";
+  const resolvedSearchParams = await searchParams;
+  const destSlug = resolvedSearchParams?.destination || "";
   const d = DESTINATIONS.find((x) => x.slug === destSlug);
-  const guests = Math.max(1, Number(searchParams?.guests || 2));
+  const guests = Math.max(1, Number(resolvedSearchParams?.guests || 2));
 
   return (
     <main className="container">
       <h1 className="text-2xl sm:text-3xl font-bold mt-8">Xác nhận đặt chỗ</h1>
 
       <div className="mt-6">
-        <CheckoutForm
+        <EnhancedCheckoutForm
           destinationSlug={d?.slug}
           destinationName={d?.name}
           basePrice={d?.price ?? 0}
           guests={guests}
-          from={searchParams?.from}
-          to={searchParams?.to}
+          from={resolvedSearchParams?.from}
+          to={resolvedSearchParams?.to}
         />
       </div>
     </main>

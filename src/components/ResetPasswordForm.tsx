@@ -36,8 +36,9 @@ export default function ResetPasswordForm({ token: initialToken = "" }: { token?
       }
       setOk(true);
       setTimeout(() => (window.location.href = "/signin"), 1200);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      const error = e as { message?: string };
+      setError(error.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }

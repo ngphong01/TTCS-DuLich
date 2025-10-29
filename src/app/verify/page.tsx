@@ -4,30 +4,44 @@ import { useEffect, useState } from "react";
 export default function VerifyPage({
   searchParams,
 }: {
-  searchParams?: { token?: string; email?: string };
+  searchParams?: Promise<{ token?: string; email?: string }>;
 }) {
   const [status, setStatus] = useState<"idle" | "ok" | "error" | "loading">("idle");
 
   useEffect(() => {
-    const token = searchParams?.token || "";
-    const email = (searchParams?.email || "").toLowerCase();
-    if (!token || !email) {
-      setStatus("error");
-      return;
-    }
-    setStatus("loading");
-    fetch("/api/auth/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, email }),
-    })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(await r.text());
+    const handleVerify = async () => {
+      if (!searchParams) {
+        setStatus("error");
+        return;
+      }
+      
+      const params = await searchParams;
+      const token = params?.token || "";
+      const email = (params?.email || "").toLowerCase();
+      
+      if (!token || !email) {
+        setStatus("error");
+        return;
+      }
+      
+      setStatus("loading");
+      try {
+        const response = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, email }),
+        });
+        
+        if (!response.ok) throw new Error(await response.text());
         setStatus("ok");
-        setTimeout(() => (window.location.href = "/signin"), 1500);
-      })
-      .catch(() => setStatus("error"));
-  }, [searchParams?.token, searchParams?.email]);
+        setTimeout(() => (window.location.href = "/simple-login"), 1500);
+      } catch {
+        setStatus("error");
+      }
+    };
+    
+    handleVerify();
+  }, [searchParams]);
 
   return (
     <main className="container">
