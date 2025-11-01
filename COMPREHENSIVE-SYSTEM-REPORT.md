@@ -13,7 +13,7 @@
 
 ### ✅ **Server Core**
 
-- **Status**: ⚠️ Unhealthy (do database connection)
+- **Status**: ⚠️ Loi (do database connection)
 - **Uptime**: ✅ 219 giây (3.7 phút)
 - **API Health**: ✅ Healthy - API endpoints responding
 - **Response Time**: ⚠️ 125ms (chậm hơn mong đợi)
