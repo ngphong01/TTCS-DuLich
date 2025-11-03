@@ -1,0 +1,12 @@
+# Backend API URL
+REACT_APP_BACKEND_URL=http://localhost:3000
+
+# Google OAuth Configuration
+REACT_APP_OAUTH_GOOGLE_AUTH_URL=https://accounts.google.com/o/oauth2/v2/auth
+REACT_APP_OAUTH_GOOGLE_CLIENT_ID=750020517965-993jgrr32cr25qcirvrr63me3u1gkr1r.apps.googleusercontent.com
+REACT_APP_OAUTH_GOOGLE_SCOPE=openid email profile
+
+# GitHub OAuth Configuration (optional)
+REACT_APP_OAUTH_GITHUB_AUTH_URL=https://github.com/login/oauth/authorize
+REACT_APP_OAUTH_GITHUB_CLIENT_ID=YOUR_GITHUB_CLIENT_ID
+REACT_APP_OAUTH_GITHUB_SCOPE=read:user user:email

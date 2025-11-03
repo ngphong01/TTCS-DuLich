@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          Role      @default(USER)
+  avatarUrl     String?
+  settings      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+  reviews       Review[]
+  notifications Notification[]
+  wishlist      Wishlist[]
+  loyalty       Loyalty?
+}
+
+model Destination {
+  id           Int        @id @default(autoincrement())
+  name         String
+  slug         String     @unique
+  description  String?
+  image        String?
+  country      String?    @default("Việt Nam")
+  featured     Boolean    @default(false)
+  price        Int        @default(0)
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  categoryId   Int?
+  reviews      Review[]
+  bookings     Booking[]
+  wishlist     Wishlist[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Booking {
+  id            Int          @id @default(autoincrement())
+  code          String       @unique
+  user          User         @relation(fields: [userId], references: [id])
+  userId        Int
+  destination   Destination  @relation(fields: [destinationId], references: [id])
+  destinationId Int
+  status        BookingStatus @default(PENDING)
+  totalAmount   Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  payment       Payment?
+}
+
+model Payment {
+  id         Int        @id @default(autoincrement())
+  booking    Booking    @relation(fields: [bookingId], references: [id])
+  bookingId  Int        @unique
+  amount     Int
+  status     PaymentStatus @default(PENDING)
+  provider   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Review {
+  id            Int         @id @default(autoincrement())
+  user          User        @relation(fields: [userId], references: [id])
+  userId        Int
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  destinationId Int
+  rating        Int
+  comment       String?
+  createdAt     DateTime    @default(now())
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String
+  message   String
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+model Wishlist {
+  id            Int         @id @default(autoincrement())
+  user          User        @relation(fields: [userId], references: [id])
+  userId        Int
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  destinationId Int
+  createdAt     DateTime    @default(now())
+  @@unique([userId, destinationId])
+}
+
+model Loyalty {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique
+  points    Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String
+  destinations Destination[]
+}
+
+model SupportTicket {
+  id        Int      @id @default(autoincrement())
+  userEmail String
+  subject   String
+  message   String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}

@@ -1,0 +1,324 @@
+/**
+ * Performance Optimized CSS
+ * Tối ưu hóa CSS để cải thiện tốc độ click và hiệu suất tổng thể
+ */
+
+/* Hardware acceleration cho tất cả interactive elements */
+.btn, .card, a, button, [class*="hover:"], [class*="click:"] {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Tối ưu hóa transitions - giảm thời gian và sử dụng GPU */
+.optimized-transition {
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Click feedback nhanh hơn */
+.click-feedback {
+  transition: transform 0.1s ease-out;
+}
+
+.click-feedback:active {
+  transform: scale(0.98);
+}
+
+/* Tối ưu hóa hover effects */
+.optimized-hover {
+  transition: all 0.2s ease-out;
+  will-change: transform, background-color, box-shadow;
+}
+
+.optimized-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Giảm motion cho users có preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .optimized-hover:hover {
+    transform: none;
+  }
+}
+
+/* Tối ưu hóa cho mobile */
+@media (max-width: 768px) {
+  .btn, .card, a, button {
+    /* Giảm complexity trên mobile */
+    transition: transform 0.1s ease-out;
+  }
+  
+  .optimized-hover:hover {
+    transform: none; /* Disable hover effects on mobile */
+  }
+}
+
+/* Performance optimized gradients */
+.performance-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed; /* Prevent repaint on scroll */
+}
+
+/* Optimized animations */
+@keyframes optimized-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.optimized-fade-in {
+  animation: optimized-fade-in 0.3s ease-out;
+}
+
+/* Tối ưu hóa cho touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .btn, .card, a, button {
+    /* Tăng touch target size */
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Disable hover effects on touch devices */
+  .optimized-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Optimized focus states */
+.optimized-focus:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  transition: outline 0.1s ease-out;
+}
+
+/* Performance optimized shadows */
+.performance-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease-out;
+}
+
+.performance-shadow:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Optimized text rendering */
+.optimized-text {
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Performance optimized images */
+.optimized-image {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Optimized scrolling */
+.optimized-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Performance optimized forms */
+.optimized-form input,
+.optimized-form textarea,
+.optimized-form select {
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.optimized-form input:focus,
+.optimized-form textarea:focus,
+.optimized-form select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Optimized loading states */
+.optimized-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.optimized-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Performance optimized modals */
+.optimized-modal {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.optimized-modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.2s ease-out;
+}
+
+/* Optimized dropdowns */
+.optimized-dropdown {
+  transform: translateY(-10px);
+  opacity: 0;
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+  pointer-events: none;
+}
+
+.optimized-dropdown.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Performance optimized cards */
+.optimized-card {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  will-change: transform, box-shadow;
+}
+
+.optimized-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Optimized buttons */
+.optimized-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease-out;
+  will-change: transform, background-color;
+}
+
+.optimized-button:active {
+  transform: scale(0.98);
+}
+
+.optimized-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease-out, height 0.3s ease-out;
+}
+
+.optimized-button:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Performance optimized navigation */
+.optimized-nav {
+  transition: background-color 0.2s ease-out;
+  will-change: background-color;
+}
+
+.optimized-nav.scrolled {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Optimized list items */
+.optimized-list-item {
+  transition: background-color 0.15s ease-out;
+}
+
+.optimized-list-item:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Performance optimized tables */
+.optimized-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.optimized-table th,
+.optimized-table td {
+  transition: background-color 0.15s ease-out;
+}
+
+.optimized-table tr:hover th,
+.optimized-table tr:hover td {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Optimized tooltips */
+.optimized-tooltip {
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  pointer-events: none;
+}
+
+.optimized-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Performance optimized progress bars */
+.optimized-progress {
+  background: linear-gradient(90deg, #e5e7eb 0%, #e5e7eb 100%);
+  transition: background 0.3s ease-out;
+}
+
+.optimized-progress-bar {
+  background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+  transition: width 0.3s ease-out;
+  will-change: width;
+}
+
+/* Optimized skeleton loading */
+.optimized-skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

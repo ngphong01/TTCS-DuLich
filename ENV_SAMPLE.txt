@@ -1,0 +1,22 @@
+# Server Configuration
+PORT=3000
+FRONTEND_URL=http://localhost:3001
+ALLOWED_ORIGIN=http://localhost:3001
+
+# Database - MySQL với password 123456 và port 3306
+DATABASE_URL=mysql://root:123456@localhost:3306/travelgo
+
+# JWT Secret (change this to a secure random string)
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=750020517965-993jgrr32cr25qcirvrr63me3u1gkr1r.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+
+# Google OAuth URLs
+OAUTH_GOOGLE_AUTH_URL=https://accounts.google.com/o/oauth2/v2/auth
+OAUTH_GOOGLE_TOKEN_URL=https://oauth2.googleapis.com/token
+OAUTH_GOOGLE_USERINFO_URL=https://www.googleapis.com/oauth2/v2/userinfo
+OAUTH_GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/callback/google
+OAUTH_GOOGLE_SCOPE=openid email profile
+
