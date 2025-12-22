@@ -66,11 +66,19 @@ export default function ChangePasswordPage() {
     }
 
     try {
-      const response = await fetch('/api/auth/change', {
+      const token = localStorage.getItem('tg_token');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3000';
+      const response = await fetch(`${backendUrl}/api/auth/change`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
+
+      const data = await response.json().catch(() => ({ error: 'Không thể đọc phản hồi từ server' }));
 
       if (response.ok) {
         setSuccess(true);
@@ -78,11 +86,12 @@ export default function ChangePasswordPage() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        const data = await response.json();
-        setError(data.error || 'Đổi mật khẩu thất bại');
+        console.error('Change password error:', { status: response.status, data });
+        setError(data.error || data.message || 'Đổi mật khẩu thất bại');
       }
-    } catch (err) {
-      setError('Có lỗi xảy ra, vui lòng thử lại');
+    } catch (err: any) {
+      console.error('Change password exception:', err);
+      setError(err?.message || 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       setLoading(false);
     }
@@ -165,8 +174,9 @@ export default function ChangePasswordPage() {
                                 type={showCurrentPassword ? "text" : "password"}
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white pr-12 font-medium"
+                                className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-white focus:bg-white pr-12 font-medium"
                                 placeholder="Nhập mật khẩu hiện tại"
+                                autoComplete="current-password"
                                 required
                               />
                               <button

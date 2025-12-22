@@ -1,0 +1,18 @@
+{
+  "duration": "Thời gian",
+  "rating": "Đánh giá",
+  "reviews": "đánh giá",
+  "highlights": "Điểm nổi bật",
+  "itinerary": "Lịch trình",
+  "included": "Bao gồm",
+  "notIncluded": "Không bao gồm",
+  "policies": "Chính sách",
+  "overview": "Tổng quan",
+  "selectDate": "Chọn ngày khởi hành",
+  "participants": "Số người tham gia",
+  "bookNow": "Đặt ngay",
+  "fromPrice": "Từ {{price}}",
+  "days": "{{count}} ngày",
+  "days_plural": "{{count}} ngày"
+}
+

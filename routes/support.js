@@ -1,10 +1,11 @@
 // routes/support.js
 const express = require('express');
 const prisma = require('../lib/prisma');
+const { contactLimiter } = require('../middleware/rateLimit');
 const router = express.Router();
 
 // POST /api/support - Create support ticket
-router.post('/', async (req, res) => {
+router.post('/', contactLimiter, async (req, res) => {
   try {
     const { userEmail, subject, message } = req.body;
 

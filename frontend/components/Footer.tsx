@@ -38,8 +38,8 @@ export default function Footer() {
           <h3 className="font-semibold mb-2">Liên hệ</h3>
           <ul className="text-sm/6 space-y-1">
             <li>Email: phong@triennguyen.com</li>
-            <li>Hotline: 1900 1234</li>
-            <li>Địa chỉ: 123 Trần Phú, Hà Nội</li>
+            <li>Hotline: 0868156027</li>
+            <li>Địa chỉ: 6/160 Tân Triều, Thanh Trì, Hà Nội</li>
           </ul>
         </div>
       </div>

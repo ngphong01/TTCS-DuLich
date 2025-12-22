@@ -10,7 +10,9 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   ChatBubbleLeftRightIcon,
-  SparklesIcon
+  SparklesIcon,
+  BuildingOfficeIcon,
+  BuildingStorefrontIcon
 } from "@heroicons/react/24/outline";
 
 const navigation = [
@@ -31,20 +33,36 @@ const navigation = [
     textColor: "text-emerald-700",
   },
   {
+    name: "Khách sạn",
+    href: "/admin/hotels",
+    icon: BuildingOfficeIcon,
+    color: "from-blue-500 to-indigo-500",
+    bgColor: "bg-blue-50",
+    textColor: "text-blue-700",
+  },
+  {
+    name: "Nhà hàng",
+    href: "/admin/restaurants",
+    icon: BuildingStorefrontIcon,
+    color: "from-orange-500 to-red-500",
+    bgColor: "bg-orange-50",
+    textColor: "text-orange-700",
+  },
+  {
     name: "Đặt chỗ",
     href: "/admin/bookings",
     icon: ClipboardDocumentListIcon,
-    color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-50",
-    textColor: "text-purple-700",
+    color: "from-cyan-500 to-teal-500",
+    bgColor: "bg-cyan-50",
+    textColor: "text-cyan-700",
   },
   {
     name: "Workflow",
     href: "/admin/bookings/workflow",
     icon: ClipboardDocumentListIcon,
-    color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-50",
-    textColor: "text-purple-700",
+    color: "from-cyan-500 to-teal-500",
+    bgColor: "bg-cyan-50",
+    textColor: "text-cyan-700",
   },
   {
     name: "Người dùng",
@@ -74,9 +92,9 @@ const navigation = [
     name: "Nội dung",
     href: "/admin/content",
     icon: StarIcon,
-    color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-50",
-    textColor: "text-purple-700",
+    color: "from-sky-500 to-blue-500",
+    bgColor: "bg-sky-50",
+    textColor: "text-sky-700",
   },
   {
     name: "Thanh toán",
@@ -144,15 +162,19 @@ export default function AdminSidebar() {
       {/* Header */}
       <div className="h-20 flex items-center px-6 border-b border-gray-200/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl shadow-lg overflow-hidden">
+          <div className="w-10 h-10 rounded-xl shadow-lg overflow-hidden bg-white">
             <img
-              src="https://png.pngtree.com/png-clipart/20250314/original/pngtree-travel-go-logo-blue-and-yellow-design-png-image_20197838.png"
+              src="/uploads/avatars/travelgo-admin.png"
               alt="TravelGo Logo"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://png.pngtree.com/png-clipart/20250314/original/pngtree-travel-go-logo-blue-and-yellow-design-png-image_20197838.png";
+              }}
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-500 via-teal-500 to-sky-500 bg-clip-text text-transparent">
               TravelGo
             </h1>
             <p className="text-xs text-gray-500 font-medium">Admin Panel</p>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Review } from "../data/reviews";
+import ReviewForm from "./ReviewForm";
 
 export default function ReviewsSection({ slug }: { slug: string }) {
   const [list, setList] = useState<Review[]>([]);
@@ -26,30 +27,6 @@ export default function ReviewsSection({ slug }: { slug: string }) {
     );
   }, [list]);
 
-  const [author, setAuthor] = useState("");
-  const [rating, setRating] = useState<number>(5);
-  const [comment, setComment] = useState("");
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('tg_token');
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-    
-    const res = await fetch("/api/review", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ slug, author, rating, comment }),
-    });
-    if (!res.ok) return;
-    const created: Review = await res.json();
-    setList((prev) => [...prev, created]);
-    setAuthor("");
-    setRating(5);
-    setComment("");
-  };
 
   return (
     <section className="rounded-2xl border border-black/[.08] dark:border-white/[.145] p-4">
@@ -67,6 +44,18 @@ export default function ReviewsSection({ slug }: { slug: string }) {
                 <span className="text-sm/6">⭐ {r.rating}</span>
               </div>
               <p className="text-sm/6 mt-1">{r.comment}</p>
+              {(r as any).images && Array.isArray((r as any).images) && (r as any).images.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(r as any).images.map((img: string, idx: number) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`Review image ${idx + 1}`}
+                      className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                    />
+                  ))}
+                </div>
+              )}
               <p className="text-xs/6 text-foreground/60 mt-1">{r.date}</p>
             </li>
           ))}
@@ -78,47 +67,17 @@ export default function ReviewsSection({ slug }: { slug: string }) {
         </ul>
       )}
 
-      <form onSubmit={submit} className="mt-4 grid gap-3">
-        <h3 className="font-semibold">Viết đánh giá</h3>
-        <input
-          type="text"
-          placeholder="Tên của bạn"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          className="rounded border border-black/[.08] dark:border-white/[.145] px-3 py-2 bg-transparent"
+      <div className="mt-4">
+        <ReviewForm
+          destinationSlug={slug}
+          onSuccess={() => {
+            // Refresh reviews
+            fetch(`/api/review/slug/${encodeURIComponent(slug)}`)
+              .then((r) => r.json())
+              .then((data: Review[]) => setList(data));
+          }}
         />
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-medium">Rating (0-5)</label>
-            <input
-              type="number"
-              min={0}
-              max={5}
-              step={0.1}
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-              className="w-full rounded border border-black/[.08] dark:border-white/[.145] px-3 py-2 bg-transparent"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium">Ngày</label>
-            <input
-              type="date"
-              value={new Date().toISOString().slice(0, 10)}
-              readOnly
-              className="w-full rounded border border-black/[.08] dark:border-white/[.145] px-3 py-2 bg-transparent"
-            />
-          </div>
-        </div>
-        <textarea
-          placeholder="Cảm nhận của bạn..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="rounded border border-black/[.08] dark:border-white/[.145] px-3 py-2 bg-transparent min-h-[80px]"
-        />
-        <button className="rounded-full bg-foreground text-background px-6 py-2 hover:opacity-90 w-max">Gửi đánh giá</button>
-        <p className="text-xs/6 text-foreground/60">Đánh giá sẽ được lưu qua API (file JSON trong dev môi trường).</p>
-      </form>
+      </div>
     </section>
   );
 }

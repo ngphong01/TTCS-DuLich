@@ -77,7 +77,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white py-20">
+      <section className="bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-500 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-6 py-2.5 mb-6">
@@ -211,7 +211,7 @@ export default function About() {
 
         {/* CTA */}
         <section className="mb-4">
-          <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 md:p-12 text-white text-center">
+          <div className="bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-500 rounded-2xl p-8 md:p-12 text-white text-center">
             <h2 className="text-3xl font-extrabold mb-2">Sẵn sàng cho hành trình mới?</h2>
             <p className="text-white/90 mb-6">Khám phá hàng trăm ưu đãi và điểm đến nổi bật hôm nay.</p>
             <Link to="/destinations" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-gray-100">
@@ -260,15 +260,111 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {['✈️', '🏨', '🚢', '🚌', '🍽️', '🎫'].map((icon, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center text-5xl hover:shadow-2xl transition-all transform hover:-translate-y-1"
-              >
-                {icon}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {/* Airplane Icon */}
+            <div className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <svg viewBox="0 0 100 100" className="w-16 h-16">
+                <defs>
+                  <linearGradient id="airplaneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#8B5CF6', stopOpacity: 1}} />
+                    <stop offset="100%" style={{stopColor: '#3B82F6', stopOpacity: 1}} />
+                  </linearGradient>
+                </defs>
+                <path d="M50 20 L70 40 L60 50 L80 70 L60 75 L50 65 L40 75 L20 55 L30 45 L40 35 Z" fill="url(#airplaneGrad)" stroke="#6366F1" strokeWidth="2"/>
+                <circle cx="50" cy="50" r="3" fill="#FFFFFF"/>
+              </svg>
+            </div>
+
+            {/* Hotel Icon */}
+            <div className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <svg viewBox="0 0 100 100" className="w-16 h-16">
+                <defs>
+                  <linearGradient id="hotelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#DC2626', stopOpacity: 1}} />
+                    <stop offset="100%" style={{stopColor: '#B91C1C', stopOpacity: 1}} />
+                  </linearGradient>
+                </defs>
+                <rect x="20" y="30" width="60" height="50" fill="#D97706" stroke="#B45309" strokeWidth="2"/>
+                <rect x="20" y="30" width="60" height="15" fill="url(#hotelGrad)"/>
+                <text x="50" y="42" fontSize="20" fontWeight="bold" fill="white" textAnchor="middle">H</text>
+                <rect x="30" y="50" width="8" height="8" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <rect x="45" y="50" width="8" height="8" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <rect x="62" y="50" width="8" height="8" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <rect x="30" y="62" width="8" height="8" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <rect x="45" y="62" width="8" height="8" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <rect x="62" y="62" width="8" height="8" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+              </svg>
+            </div>
+
+            {/* Cruise Ship Icon */}
+            <div className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <svg viewBox="0 0 100 100" className="w-16 h-16">
+                <defs>
+                  <linearGradient id="shipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#FFFFFF', stopOpacity: 1}} />
+                    <stop offset="100%" style={{stopColor: '#DC2626', stopOpacity: 1}} />
+                  </linearGradient>
+                </defs>
+                <path d="M10 70 Q20 60 30 65 L70 65 Q80 60 90 70 L90 80 L10 80 Z" fill="url(#shipGrad)" stroke="#B91C1C" strokeWidth="2"/>
+                <rect x="35" y="50" width="30" height="15" fill="#1E40AF" stroke="#1E3A8A" strokeWidth="1"/>
+                <rect x="40" y="45" width="20" height="5" fill="#3B82F6" stroke="#2563EB" strokeWidth="1"/>
+                <path d="M20 70 Q25 65 30 70" stroke="#3B82F6" strokeWidth="2" fill="none"/>
+                <path d="M70 70 Q75 65 80 70" stroke="#3B82F6" strokeWidth="2" fill="none"/>
+              </svg>
+            </div>
+
+            {/* Bus Icon */}
+            <div className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <svg viewBox="0 0 100 100" className="w-16 h-16">
+                <defs>
+                  <linearGradient id="busGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#FCD34D', stopOpacity: 1}} />
+                    <stop offset="100%" style={{stopColor: '#F59E0B', stopOpacity: 1}} />
+                  </linearGradient>
+                </defs>
+                <rect x="15" y="40" width="70" height="35" rx="3" fill="url(#busGrad)" stroke="#D97706" strokeWidth="2"/>
+                <rect x="20" y="45" width="25" height="25" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <rect x="50" y="45" width="25" height="25" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1"/>
+                <circle cx="30" cy="80" r="6" fill="#4B5563" stroke="#1F2937" strokeWidth="1"/>
+                <circle cx="70" cy="80" r="6" fill="#4B5563" stroke="#1F2937" strokeWidth="1"/>
+                <circle cx="30" cy="80" r="3" fill="#9CA3AF"/>
+                <circle cx="70" cy="80" r="3" fill="#9CA3AF"/>
+              </svg>
+            </div>
+
+            {/* Restaurant Icon */}
+            <div className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <svg viewBox="0 0 100 100" className="w-16 h-16">
+                <defs>
+                  <linearGradient id="restaurantGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#8B5CF6', stopOpacity: 1}} />
+                    <stop offset="100%" style={{stopColor: '#6366F1', stopOpacity: 1}} />
+                  </linearGradient>
+                </defs>
+                <ellipse cx="50" cy="60" rx="35" ry="25" fill="url(#restaurantGrad)" stroke="#4F46E5" strokeWidth="2"/>
+                <path d="M30 50 L35 35 L40 50" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M50 50 L55 35 L60 50" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M70 50 L75 35 L80 50" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+
+            {/* Ticket Icon */}
+            <div className="bg-white rounded-xl shadow-lg p-8 flex items-center justify-center hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <svg viewBox="0 0 100 100" className="w-16 h-16">
+                <defs>
+                  <linearGradient id="ticketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: '#FCD34D', stopOpacity: 1}} />
+                    <stop offset="100%" style={{stopColor: '#F59E0B', stopOpacity: 1}} />
+                  </linearGradient>
+                </defs>
+                <rect x="20" y="30" width="60" height="40" rx="2" fill="url(#ticketGrad)" stroke="#D97706" strokeWidth="2"/>
+                <path d="M45 30 Q50 35 55 30" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M45 70 Q50 65 55 70" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="50" y1="30" x2="50" y2="70" stroke="#FFFFFF" strokeWidth="1" strokeDasharray="2,2"/>
+                <circle cx="35" cy="50" r="2" fill="#FFFFFF"/>
+                <circle cx="65" cy="50" r="2" fill="#FFFFFF"/>
+              </svg>
                   </div>
-            ))}
           </div>
 
           <div className="mt-8 bg-white rounded-xl shadow-lg p-8">

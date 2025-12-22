@@ -10,6 +10,7 @@ import {
   ArrowRightOnRectangleIcon 
 } from '@heroicons/react/24/outline';
 import { getCurrentUser } from '../lib/auth';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -23,7 +24,8 @@ export default function AdminLayout() {
 
   const navItems = [
     { href: '/admin/dashboard', label: 'Tổng quan', icon: HomeIcon },
-    { href: '/admin/destinations', label: 'Quản lý Tour', icon: MapPinIcon },
+    { href: '/admin/destinations', label: 'Điểm đến', icon: MapPinIcon },
+    { href: '/admin/tours', label: 'Quản lý Tour', icon: MapPinIcon },
     { href: '/admin/bookings', label: 'Đặt chỗ', icon: ClipboardDocumentListIcon },
     { href: '/admin/users', label: 'Người dùng', icon: UsersIcon },
     { href: '/admin/reviews', label: 'Đánh giá', icon: StarIcon },
@@ -36,17 +38,32 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <Link to="/" className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TG</span>
+          <Link to="/" className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl shadow-lg overflow-hidden bg-white">
+              <img
+                src="/uploads/avatars/travelgo-admin.png"
+                alt="TravelGo Logo"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center hidden">
+                <span className="text-white font-bold text-sm">TG</span>
+              </div>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TravelGo Admin
-            </span>
+            <div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
+                TravelGo Admin
+              </span>
+              {user && (
+                <p className="text-xs text-gray-500 mt-0.5">{user.email}</p>
+              )}
+            </div>
           </Link>
-          {user && (
-            <p className="text-xs text-gray-500">{user.email}</p>
-          )}
         </div>
         
         <nav className="flex-1 p-4 space-y-1">
@@ -90,8 +107,11 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-gray-900">Bảng điều khiển</h1>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+          </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">
           <Outlet />

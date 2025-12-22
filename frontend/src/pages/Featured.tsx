@@ -170,7 +170,7 @@ export default function Featured() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
       {/* Hero Section - Enhanced */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-500 text-white">
         {/* Animated Background */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0" style={{
@@ -180,7 +180,7 @@ export default function Featured() {
           }} />
         </div>
         <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
@@ -393,8 +393,8 @@ export default function Featured() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-4xl shadow-lg">
-                      ✈️
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg overflow-hidden">
+                      <img src="/file.svg" alt="combo-icon" className="w-12 h-12 object-contain" loading="lazy" />
                     </div>
                     <div>
                       <h3 className="font-bold text-2xl text-gray-900">Tour + Khách sạn + Vé máy bay</h3>
@@ -422,8 +422,8 @@ export default function Featured() {
             
                 <div className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-4xl shadow-lg">
-                      👥
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg overflow-hidden">
+                      <img src="/icons/city.svg" alt="early-icon" className="w-12 h-12 object-contain" loading="lazy" />
                     </div>
                     <div>
                       <h3 className="font-bold text-2xl text-gray-900">Book sớm - Giảm sâu</h3>
@@ -759,7 +759,7 @@ export default function Featured() {
         )}
         
         {/* Sitewide CTA: Email Capture */}
-        <section className="mt-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white">
+        <section className="mt-12 bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-500 rounded-3xl p-8 text-white">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-extrabold mb-2">Nhận ưu đãi độc quyền</h2>
             <p className="text-white/90 mb-4">Đăng ký email để nhận tin khuyến mãi và trend du lịch mới nhất.</p>

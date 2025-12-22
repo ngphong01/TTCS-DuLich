@@ -1,0 +1,19 @@
+{
+  "@context": "https://schema.org",
+  "@type": "TravelAgency",
+  "name": "TravelGo",
+  "description": "Công ty du lịch hàng đầu Việt Nam",
+  "url": "https://travelgo.com",
+  "logo": "https://travelgo.com/logo.png",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+84-1900-xxxx",
+    "contactType": "customer service",
+    "email": "support@travelgo.com"
+  },
+  "sameAs": [
+    "https://www.facebook.com/travelgo",
+    "https://www.instagram.com/travelgo"
+  ]
+}
+

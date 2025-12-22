@@ -3,6 +3,7 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { reviewLimiter } = require('../middleware/rateLimit');
 const router = express.Router();
 
 // GET /api/review/slug/:slug - get reviews by destination slug
@@ -17,11 +18,31 @@ router.get('/slug/:slug', async (req, res) => {
       return res.json([]);
     }
     
-    const items = await prisma.review.findMany({
-      where: { destinationId: destination.id },
-      orderBy: { createdAt: 'desc' },
-      include: { user: { select: { name: true } } }
-    });
+    // Use select to avoid fields that might not exist in DB
+    let items = [];
+    try {
+      items = await prisma.review.findMany({
+        where: { destinationId: destination.id },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          user: { select: { name: true } }
+        }
+      });
+    } catch (dbError) {
+      // If database schema doesn't match, log and return empty array
+      if (dbError.code === 'P2022' || dbError.message?.includes('does not exist')) {
+        console.log('⚠️  Review schema mismatch. Field "images" may not exist in database.');
+        console.log('   Run: npx prisma db push or npx prisma migrate dev');
+        // Return empty array instead of crashing
+        items = [];
+      } else {
+        throw dbError;
+      }
+    }
     
     // Transform to match frontend Review type
     const transformed = items.map(item => ({
@@ -40,9 +61,9 @@ router.get('/slug/:slug', async (req, res) => {
 });
 
 // POST /api/review - create new review
-router.post('/', async (req, res) => {
+router.post('/', reviewLimiter, async (req, res) => {
   try {
-    const { slug, author, rating, comment } = req.body;
+    const { slug, author, rating, comment, images } = req.body;
     
     // Get destination by slug
     const destination = await prisma.destination.findUnique({
@@ -93,15 +114,55 @@ router.post('/', async (req, res) => {
         message: 'Authentication required or author name must be provided' 
       });
     }
+
+    // Verify user has completed booking for this destination (optional check)
+    // Only check if user is authenticated (not guest)
+    if (userId) {
+      const user = await prisma.user.findUnique({ 
+        where: { id: userId },
+        select: { id: true, email: true, name: true, role: true }
+      });
+      if (user && !user.email.startsWith('guest-')) {
+        const hasCompletedBooking = await prisma.booking.findFirst({
+          where: {
+            userId,
+            destinationId: destination.id,
+            status: 'COMPLETED',
+          },
+        });
+
+        if (!hasCompletedBooking) {
+          // Allow review but mark as unverified (can be shown differently in UI)
+          // Or return error if strict verification is required
+          // For now, we'll allow it but log a warning
+          console.warn(`⚠️ User ${userId} reviewing destination ${destination.id} without completed booking`);
+        }
+      }
+    }
+    
+    // Create review data without images field if it doesn't exist in DB
+    const reviewData = {
+      destinationId: destination.id,
+      userId,
+      rating: Number(rating),
+      comment,
+    };
+    
+    // Only add images if the field exists in database
+    // For now, skip images field to avoid schema mismatch
+    // if (images && Array.isArray(images)) {
+    //   reviewData.images = images;
+    // }
     
     const review = await prisma.review.create({
-      data: {
-        destinationId: destination.id,
-        userId,
-        rating: Number(rating),
-        comment,
-      },
-      include: { user: { select: { name: true } } }
+      data: reviewData,
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        user: { select: { name: true } }
+      }
     });
     
     // Transform response
@@ -129,23 +190,88 @@ router.post('/', async (req, res) => {
 
 // GET /api/review/:destinationId
 router.get('/:destinationId', async (req, res) => {
-  const destinationId = Number(req.params.destinationId);
-  const items = await prisma.review.findMany({
-    where: { destinationId },
-    orderBy: { createdAt: 'desc' },
-  });
-  res.json(items);
+  try {
+    const destinationId = Number(req.params.destinationId);
+    const items = await prisma.review.findMany({
+      where: { destinationId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        userId: true,
+        destinationId: true,
+      }
+    });
+    res.json(items);
+  } catch (error) {
+    if (error.code === 'P2022' || error.message?.includes('does not exist')) {
+      console.log('⚠️  Review schema mismatch. Field "images" may not exist in database.');
+      console.log('   Run: npx prisma db push or npx prisma migrate dev');
+      // Return empty array instead of crashing
+      res.json([]);
+    } else {
+      console.error('Error fetching reviews:', error);
+      res.status(500).json({ message: 'Error fetching reviews' });
+    }
+  }
 });
 
 // GET /api/review/user/:id
 router.get('/user/:id', async (req, res) => {
-  const userId = Number(req.params.id);
-  const items = await prisma.review.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    include: { destination: { select: { name: true, slug: true } } }
-  });
-  res.json(items);
+  try {
+    const userId = Number(req.params.id);
+    const items = await prisma.review.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        destination: { select: { name: true, slug: true } }
+      }
+    });
+    res.json(items);
+  } catch (error) {
+    if (error.code === 'P2022' || error.message?.includes('does not exist')) {
+      console.log('⚠️  Review schema mismatch. Field "images" may not exist in database.');
+      console.log('   Run: npx prisma db push or npx prisma migrate dev');
+      // Return empty array instead of crashing
+      res.json([]);
+    } else {
+      console.error('Error fetching user reviews:', error);
+      res.status(500).json({ message: 'Error fetching reviews' });
+    }
+  }
+});
+
+// PUT /api/review/:id/approve - Approve/reject review (Admin only)
+router.put('/:id/approve', require('../middleware/auth').authRequired, require('../middleware/auth').isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { approved } = req.body;
+
+    const review = await prisma.review.update({
+      where: { id: parseInt(id) },
+      data: { approved: approved === true },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        approved: true,
+        createdAt: true,
+        user: { select: { name: true } },
+        destination: { select: { name: true } }
+      }
+    });
+
+    res.json(review);
+  } catch (error) {
+    console.error('Error approving review:', error);
+    res.status(500).json({ message: 'Lỗi duyệt review' });
+  }
 });
 
 module.exports = router;

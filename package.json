@@ -5,6 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js",
+    "demo": "cross-env DATABASE_URL=mysql://root:123456@localhost:3306/travelgo_demo node index.js",
+    "demo:all": "concurrently \"npm run demo\" \"npm --prefix frontend start\"",
     "frontend": "npm --prefix frontend start",
     "dev:all": "concurrently \"npm start\" \"npm --prefix frontend start\"",
     "install:all": "npm install && npm --prefix frontend install",
@@ -19,16 +21,33 @@
   "license": "ISC",
   "description": "TravelGo API scaffold",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.21.1",
+    "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "googleapis": "^164.1.0",
+    "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.10",
+    "pdfkit": "^0.15.0",
+    "qrcode": "^1.5.3",
+    "slugify": "^1.6.6",
+    "speakeasy": "^2.0.0",
+    "twilio": "^5.10.6",
+    "validator": "^13.15.23",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "prisma": "^5.21.1"
   }
 }

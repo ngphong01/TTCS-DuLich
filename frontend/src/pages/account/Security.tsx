@@ -177,8 +177,9 @@ export default function AccountSecurityPage() {
                             type={showCurrentPassword ? "text" : "password"}
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white pr-12 font-medium"
+                            className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white focus:bg-white pr-12 font-medium"
                             placeholder="Nhập mật khẩu hiện tại"
+                            autoComplete="current-password"
                             required
                           />
                           <button

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   HeartIcon,
   MapPinIcon,
@@ -12,69 +13,91 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { DESTINATIONS } from "../../data/destinations";
 import AccountSidebar from "../../components/AccountSidebar";
-
-const STORAGE_KEY = "travelgo:wishlist";
+import { UserAPI } from "../../utils/api";
+import { getUserWishlist, removeFromWishlist, WishlistItem } from "../../services/wishlist";
 
 type ViewMode = 'grid' | 'list';
 
 export default function WishlistPage() {
-  const [ids, setIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'price-asc' | 'price-desc' | 'rating'>('name');
-  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setIds(JSON.parse(raw));
-    } catch {}
-  }, []);
+  const { data: currentUser, isLoading: userLoading } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const res = await UserAPI.current();
+      return res.user;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const {
+    data: wishlistData,
+    isLoading: wishlistLoading,
+    refetch: refetchWishlist,
+  } = useQuery({
+    queryKey: ['account-wishlist', currentUser?.id],
+    queryFn: () => getUserWishlist(currentUser!.id),
+    enabled: Boolean(currentUser?.id),
+  });
 
   const items = useMemo(() => {
-    const set = new Set(ids);
-    let filtered = DESTINATIONS.filter((d) => set.has(d.slug));
-    
-    // Search filter
+    if (!wishlistData) return [];
+    let destinations = wishlistData.map((item) => ({
+      wishlistId: item.id,
+      ...item.destination,
+    }));
+
     if (searchQuery) {
-      filtered = filtered.filter(d => 
-        d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        d.country.toLowerCase().includes(searchQuery.toLowerCase())
+      destinations = destinations.filter(
+        (d) =>
+          d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (d.country || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
-    // Sort
-    filtered.sort((a, b) => {
-      switch(sortBy) {
-        case 'name': return a.name.localeCompare(b.name);
-        case 'price-asc': return (a.price || 0) - (b.price || 0);
-        case 'price-desc': return (b.price || 0) - (a.price || 0);
-        case 'rating': return (b.rating || 0) - (a.rating || 0);
-        default: return 0;
+
+    destinations.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'price-asc':
+          return (a.price || 0) - (b.price || 0);
+        case 'price-desc':
+          return (b.price || 0) - (a.price || 0);
+        case 'rating':
+          return (b.rating || 0) - (a.rating || 0);
+        default:
+          return 0;
       }
     });
-    
-    return filtered;
-  }, [ids, searchQuery, sortBy]);
 
-  const remove = (slug: string) => {
-    setRemovingId(slug);
-    setTimeout(() => {
-      const next = ids.filter((s) => s !== slug);
-      setIds(next);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    return destinations;
+  }, [wishlistData, searchQuery, sortBy]);
+
+  const remove = async (wishlistId: number) => {
+    setRemovingId(wishlistId);
+    try {
+      await removeFromWishlist(wishlistId);
+      await refetchWishlist();
+    } catch (error) {
+      console.error('Remove wishlist error:', error);
+    } finally {
       setRemovingId(null);
-      window.dispatchEvent(new Event('wishlist-updated'));
-    }, 300);
+    }
   };
 
-  const clearAll = () => {
+  const clearAll = async () => {
+    if (items.length === 0) return;
     if (window.confirm(`Xóa tất cả ${items.length} điểm đến?`)) {
-      setIds([]);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      window.dispatchEvent(new Event('wishlist-updated'));
+      try {
+        await Promise.all(items.map((item: any) => removeFromWishlist(item.wishlistId)));
+        await refetchWishlist();
+      } catch (error) {
+        console.error('Clear wishlist error:', error);
+      }
     }
   };
 
@@ -83,6 +106,42 @@ export default function WishlistPage() {
     countries: new Set(items.map(d => d.country)).size,
     totalValue: items.reduce((sum, d) => sum + (d.price || 0), 0),
   };
+
+const loading = userLoading || wishlistLoading;
+
+const resolveImage = (image?: string | null) => {
+  if (!image) return '/placeholder-destination.jpg';
+  if (image.startsWith('http')) return image;
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${image}`;
+  }
+  return image;
+};
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+        <p className="text-lg font-semibold text-gray-600">Đang tải danh sách yêu thích...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser?.id) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="bg-white rounded-3xl shadow-2xl p-10 text-center border border-white/50">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Vui lòng đăng nhập</h2>
+          <p className="text-gray-600 mb-6">Bạn cần đăng nhập để truy cập danh sách yêu thích của mình.</p>
+          <Link
+            to="/signin"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-lg"
+          >
+            Đăng nhập
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
@@ -243,15 +302,15 @@ export default function WishlistPage() {
                   <div className="grid gap-6 sm:grid-cols-2">
                     {items.map((d) => (
                       <div 
-                        key={d.slug}
+                        key={d.wishlistId}
                         className={`group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden hover:shadow-2xl transition-all duration-300 ${
-                          removingId === d.slug ? 'opacity-50 scale-95' : ''
+                          removingId === d.wishlistId ? 'opacity-50 scale-95' : ''
                         }`}
                       >
                         {/* Image */}
                         <div className="relative h-56 overflow-hidden">
                           <img 
-                            src={d.image} 
+                            src={resolveImage(d.image)} 
                             alt={d.name}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                           />
@@ -314,7 +373,7 @@ export default function WishlistPage() {
                               <span>Xem</span>
                             </Link>
                             <button 
-                              onClick={() => remove(d.slug)}
+                              onClick={() => remove(d.wishlistId)}
                               className="flex items-center justify-center p-3 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all"
                             >
                               <TrashIcon className="w-5 h-5" />
@@ -339,16 +398,16 @@ export default function WishlistPage() {
                   <div className="space-y-4">
                     {items.map((d) => (
                       <div 
-                        key={d.slug}
+                        key={d.wishlistId}
                         className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden hover:shadow-xl transition-all ${
-                          removingId === d.slug ? 'opacity-50' : ''
+                          removingId === d.wishlistId ? 'opacity-50' : ''
                         }`}
                       >
                         <div className="flex flex-col sm:flex-row">
                           {/* Image */}
                           <div className="relative sm:w-64 h-48 sm:h-auto overflow-hidden flex-shrink-0">
                             <img 
-                              src={d.image} 
+                              src={resolveImage(d.image)} 
                               alt={d.name}
                               className="w-full h-full object-cover"
                             />
@@ -401,7 +460,7 @@ export default function WishlistPage() {
                                 Đặt ngay
                               </Link>
                               <button 
-                                onClick={() => remove(d.slug)}
+                                onClick={() => remove(d.wishlistId)}
                                 className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-lg transition-all"
                               >
                                 <TrashIcon className="w-4 h-4" />

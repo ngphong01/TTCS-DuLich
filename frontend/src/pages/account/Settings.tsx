@@ -17,29 +17,162 @@ import {
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
 import AccountSidebar from "../../components/AccountSidebar";
+import { useI18n } from '../../contexts/I18nContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getAuthHeaders } from '../../utils/api';
 
 export default function SettingsPage() {
+  const { language, setLanguage, t } = useI18n();
+  const { theme, setTheme } = useTheme();
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [language, setLanguage] = useState('vi');
-  const [theme, setTheme] = useState('light');
-  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(() => {
+    const saved = localStorage.getItem('travelgo:emailNotifications');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   useEffect(() => {
-    fetch('/api/auth/user', { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('tg_token');
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('🔍 Settings: User data:', data);
+        
         if (data.authenticated && data.user) {
           setUser(data.user);
           setForm({ name: data.user.name || '', password: '' });
+          
+          // Load preferences from user settings if available
+          if (data.user.settings) {
+            try {
+              const settings = typeof data.user.settings === 'string' 
+                ? JSON.parse(data.user.settings) 
+                : data.user.settings;
+              
+              console.log('⚙️ Settings: Parsed settings:', settings);
+              
+              if (settings.language && (settings.language === 'vi' || settings.language === 'en')) {
+                setLanguage(settings.language);
+              }
+              if (settings.theme && (settings.theme === 'light' || settings.theme === 'dark' || settings.theme === 'auto')) {
+                setTheme(settings.theme);
+              }
+              if (settings.emailNotifications !== undefined) {
+                setEmailNotifications(settings.emailNotifications);
+              }
+            } catch (parseError) {
+              console.error('❌ Settings: Error parsing settings:', parseError);
+            }
+          }
+        } else {
+          console.warn('⚠️ Settings: User not authenticated');
+          // Redirect to login if not authenticated
+          window.location.href = '/signin';
         }
-      })
-      .catch(() => {});
-  }, []);
+      } catch (error) {
+        console.error('❌ Settings: Error fetching user:', error);
+        setError('Không thể tải thông tin người dùng. Vui lòng thử lại!');
+      }
+    };
+    
+    fetchUser();
+  }, [setLanguage, setTheme]);
+
+  // Save email notifications preference
+  const handleEmailNotificationsChange = async (value: boolean) => {
+    setEmailNotifications(value);
+    localStorage.setItem('travelgo:emailNotifications', String(value));
+    
+    // Save to backend if user is logged in
+    try {
+      const settings = {
+        language,
+        theme,
+        emailNotifications: value,
+      };
+      const response = await fetch('/api/account/profile', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ settings }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.status}`);
+      }
+      
+      console.log('✅ Settings: Email notifications saved');
+    } catch (err) {
+      console.error('❌ Settings: Failed to save email notifications:', err);
+    }
+  };
+
+  // Save theme and language to backend
+  const handleLanguageChange = async (value: 'vi' | 'en') => {
+    try {
+      setLanguage(value);
+      const settings = {
+        language: value,
+        theme,
+        emailNotifications,
+      };
+      const response = await fetch('/api/account/profile', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ settings }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.status}`);
+      }
+      
+      console.log('✅ Settings: Language saved:', value);
+    } catch (err) {
+      console.error('❌ Settings: Failed to save language:', err);
+    }
+  };
+
+  const handleThemeChange = async (value: 'light' | 'dark' | 'auto') => {
+    try {
+      setTheme(value);
+      const settings = {
+        language,
+        theme: value,
+        emailNotifications,
+      };
+      const response = await fetch('/api/account/profile', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ settings }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.status}`);
+      }
+      
+      console.log('✅ Settings: Theme saved:', value);
+    } catch (err) {
+      console.error('❌ Settings: Failed to save theme:', err);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -68,7 +201,8 @@ export default function SettingsPage() {
       if (Object.keys(updates).length > 0) {
         const res = await fetch('/api/account/profile', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
+          credentials: 'include',
           body: JSON.stringify(updates),
         });
 
@@ -203,9 +337,9 @@ export default function SettingsPage() {
                   </label>
                   <div className="relative">
                     <input
-                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl bg-gray-100 font-medium text-gray-600 cursor-not-allowed"
+                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl bg-white font-medium text-gray-900"
                       value={user?.email || ''}
-                      disabled
+                      readOnly
                     />
                   </div>
                   <p className="mt-2 text-xs text-gray-500">Email không thể thay đổi</p>
@@ -224,9 +358,10 @@ export default function SettingsPage() {
                         className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white pr-12 font-medium"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Để trống nếu không muốn đổi"
+                        placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
                         value={form.password}
                         onChange={handleChange}
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
@@ -240,7 +375,7 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500">Mật khẩu phải có ít nhất 6 ký tự</p>
+                  <p className="mt-2 text-xs text-gray-500">Nhập mật khẩu mới (tối thiểu 6 ký tự). Để trống nếu không muốn đổi.</p>
                 </div>
 
                 {/* Submit Button */}
@@ -290,7 +425,7 @@ export default function SettingsPage() {
                   </div>
                   <select
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    onChange={(e) => handleLanguageChange(e.target.value as 'vi' | 'en')}
                     className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                   >
                     <option value="vi">Tiếng Việt</option>
@@ -311,7 +446,7 @@ export default function SettingsPage() {
                   </div>
                   <select
                     value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
+                    onChange={(e) => handleThemeChange(e.target.value as 'light' | 'dark' | 'auto')}
                     className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium"
                   >
                     <option value="light">Sáng</option>
@@ -332,7 +467,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => setEmailNotifications(!emailNotifications)}
+                    onClick={() => handleEmailNotificationsChange(!emailNotifications)}
                     className={`relative w-14 h-7 rounded-full transition-all duration-200 ${
                       emailNotifications ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-300'
                     }`}

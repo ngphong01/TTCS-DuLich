@@ -1,0 +1,18 @@
+{
+  "duration": "Duration",
+  "rating": "Rating",
+  "reviews": "reviews",
+  "highlights": "Highlights",
+  "itinerary": "Itinerary",
+  "included": "What's Included",
+  "notIncluded": "Not Included",
+  "policies": "Policies",
+  "overview": "Overview",
+  "selectDate": "Select departure date",
+  "participants": "Number of participants",
+  "bookNow": "Book Now",
+  "fromPrice": "From {{price}}",
+  "days": "{{count}} day",
+  "days_plural": "{{count}} days"
+}
+

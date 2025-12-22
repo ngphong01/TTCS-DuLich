@@ -116,8 +116,8 @@ export default function PaymentsPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1 hidden lg:block">
-              <AccountSidebar />
-            </div>
+            <AccountSidebar />
+          </div>
             <div className="lg:col-span-3">
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="flex items-center justify-center space-x-3">
@@ -128,7 +128,7 @@ export default function PaymentsPage() {
             </div>
           </div>
         </main>
-      </div>
+        </div>
     );
   }
 
@@ -136,11 +136,11 @@ export default function PaymentsPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
+        {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              <AccountSidebar />
-            </div>
+          <AccountSidebar />
+        </div>
           </div>
 
           {/* Content */}
@@ -310,13 +310,13 @@ export default function PaymentsPage() {
                 >
                   Đặt lại bộ lọc
                 </button>
-              </div>
-            ) : (
+            </div>
+          ) : (
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
-                    <thead>
+                <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Mã giao dịch
@@ -333,8 +333,8 @@ export default function PaymentsPage() {
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Ngày
                         </th>
-                      </tr>
-                    </thead>
+                  </tr>
+                </thead>
                     <tbody className="divide-y divide-gray-200">
                       {filteredPayments.map((payment: any) => {
                         const statusConfig = getStatusConfig(payment.status);
@@ -370,13 +370,13 @@ export default function PaymentsPage() {
                                     }).format(payment.amount) 
                                   : '-'}
                               </span>
-                            </td>
+                      </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.text}`}>
                                 <StatusIcon className="w-4 h-4" />
                                 {statusConfig.label}
-                              </span>
-                            </td>
+                        </span>
+                      </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2 text-sm text-gray-700">
                                 <CalendarIcon className="w-4 h-4 text-gray-400" />
@@ -389,11 +389,11 @@ export default function PaymentsPage() {
                                   : '-'}
                               </div>
                             </td>
-                          </tr>
+                    </tr>
                         );
                       })}
-                    </tbody>
-                  </table>
+                </tbody>
+              </table>
                 </div>
 
                 {/* Mobile Card View */}
@@ -463,11 +463,11 @@ export default function PaymentsPage() {
             {filteredPayments.length > 0 && (
               <div className="text-center text-sm text-gray-600">
                 Hiển thị <span className="font-semibold text-gray-900">{filteredPayments.length}</span> trong tổng số <span className="font-semibold text-gray-900">{payments.length}</span> giao dịch
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
+    </main>
     </div>
   );
 }

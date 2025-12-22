@@ -21,7 +21,7 @@ export default function CheckoutForm({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [paying, setPaying] = useState(false);
+  const [payingProvider, setPayingProvider] = useState<string | null>(null);
   const [result, setResult] = useState<{ id: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,42 +63,53 @@ export default function CheckoutForm({
     }
   };
 
-  const payStripe = async () => {
+  const payOnline = async (provider: "stripe" | "paypal") => {
     if (!result?.id) return;
-    
-    setPaying(true);
+
+    setPayingProvider(provider);
     setError(null);
-    
+
     try {
       const token = localStorage.getItem('tg_token');
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
-      
+
       const res = await fetch("/api/payment/create", {
         method: "POST",
         headers,
-        body: JSON.stringify({ bookingId: result.id, provider: 'stripe' }),
+        body: JSON.stringify({ bookingId: result.id, provider }),
       });
-      
-      const data = await res.json();
-      
-      if (data?.url) {
-        window.location.href = data.url;
-      } else if (data?.error) {
-        if (data.error === "Stripe not configured") {
-          setError("Hệ thống thanh toán chưa được cấu hình. Vui lòng liên hệ admin.");
-        } else {
-          setError(`Lỗi thanh toán: ${data.error}`);
-        }
-      } else {
-        setError("Không thể tạo phiên thanh toán. Vui lòng thử lại.");
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const fallbackMessage =
+          provider === "paypal"
+            ? "Không thể tạo phiên thanh toán PayPal."
+            : "Không thể tạo phiên thanh toán. Vui lòng thử lại.";
+        throw new Error(data?.error || fallbackMessage);
       }
+
+      if (data?.url && data.url !== "#") {
+        window.location.href = data.url;
+        return;
+      }
+
+      const missingUrlMessage =
+        provider === "paypal"
+          ? "Không tìm thấy đường dẫn xác nhận PayPal."
+          : "Không thể tạo phiên thanh toán. Vui lòng thử lại.";
+      throw new Error(data?.error || missingUrlMessage);
     } catch (err) {
-      setError("Không thể kết nối đến hệ thống thanh toán. Vui lòng thử lại.");
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Không thể kết nối đến hệ thống thanh toán. Vui lòng thử lại.";
+      setError(message);
     } finally {
-      setPaying(false);
+      setPayingProvider(null);
     }
   };
 
@@ -164,10 +175,19 @@ export default function CheckoutForm({
           {result && (
             <button 
               className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-              onClick={payStripe}
-              disabled={paying}
+              onClick={() => payOnline("stripe")}
+              disabled={payingProvider !== null}
             >
-              {paying ? "Đang xử lý..." : "Thanh toán Stripe"}
+              {payingProvider === "stripe" ? "Đang xử lý..." : "Thanh toán Stripe"}
+            </button>
+          )}
+          {result && (
+            <button
+              className="btn btn-primary bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => payOnline("paypal")}
+              disabled={payingProvider !== null}
+            >
+              {payingProvider === "paypal" ? "Đang xử lý..." : "Thanh toán PayPal"}
             </button>
           )}
         </div>
@@ -177,7 +197,7 @@ export default function CheckoutForm({
             Đặt chỗ đã lưu! Mã đơn: <span className="font-mono">{result.id}</span>
           </p>
         )}
-        <p className="text-xs/6 text-foreground/60 mt-2">Thanh toán thực hiện qua Stripe (nếu cấu hình).</p>
+        <p className="text-xs/6 text-foreground/60 mt-2">Thanh toán trực tuyến qua Stripe hoặc PayPal (nếu cấu hình).</p>
       </aside>
     </div>
   );
