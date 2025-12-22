@@ -1,5 +1,6 @@
 import { getAuthHeaders } from "../utils/fetchHelpers";
 import { useState, useRef, useEffect } from "react";
+import { useSimpleAuth } from '../lib/use-simple-auth';
 import { 
   ChatBubbleLeftRightIcon, 
   XMarkIcon, 
@@ -20,11 +21,14 @@ interface Message {
 }
 
 export default function LiveChat() {
+  const { data: authData } = useSimpleAuth() as any;
+  const user = authData?.user || null;
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Xin chào! Tôi là AI Assistant của TravelGo. Tôi có thể giúp bạn tìm hiểu về các điểm đến, đặt chỗ, hoặc trả lời bất kỳ câu hỏi nào về du lịch. Bạn cần hỗ trợ gì?",
+      text: "Xin chào! Tôi là GoGo, AI Assistant của TravelGo. Tôi có thể giúp bạn tìm hiểu về các điểm đến, đặt chỗ, hoặc trả lời bất kỳ câu hỏi nào về du lịch. Bạn cần hỗ trợ gì?",
       isUser: false,
       timestamp: new Date()
     }
@@ -35,6 +39,9 @@ export default function LiveChat() {
   const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  const botName = "GoGo";
+  const botAvatar = "/uploads/avatars/chatbot.jpg";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,7 +104,7 @@ export default function LiveChat() {
       setMessages([
         {
           id: "1",
-          text: "Xin chào! Tôi là AI Assistant của TravelGo. Tôi có thể giúp bạn tìm hiểu về các điểm đến, đặt chỗ, hoặc trả lời bất kỳ câu hỏi nào về du lịch. Bạn cần hỗ trợ gì?",
+          text: "Xin chào! Tôi là GoGo, AI Assistant của TravelGo. Tôi có thể giúp bạn tìm hiểu về các điểm đến, đặt chỗ, hoặc trả lời bất kỳ câu hỏi nào về du lịch. Bạn cần hỗ trợ gì?",
           isUser: false,
           timestamp: new Date()
         }
@@ -204,10 +211,19 @@ export default function LiveChat() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 z-50 group"
+          className="fixed bottom-6 right-6 w-16 h-16 bg-white rounded-full shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-300 z-50 group border-2 border-gray-200 flex items-center justify-center"
         >
-          <ChatBubbleLeftRightIcon className="h-6 w-6 mx-auto group-hover:scale-110 transition-transform duration-200" />
-          <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+          <img 
+            src="/uploads/avatars/chatbot.jpg" 
+            alt="Chat với GoGo"
+            className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/default-avatar.png';
+            }}
+          />
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+          </div>
         </button>
       )}
 
@@ -218,11 +234,16 @@ export default function LiveChat() {
           <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                  <SparklesIcon className="h-5 w-5" />
-                </div>
+                <img 
+                  src={botAvatar} 
+                  alt={botName}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white/30"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/default-avatar.png';
+                  }}
+                />
                 <div>
-                  <h3 className="font-semibold">TravelGo AI</h3>
+                  <h3 className="font-semibold">{botName}</h3>
                   <p className="text-xs opacity-90">Trực tuyến</p>
                 </div>
               </div>
@@ -255,49 +276,52 @@ export default function LiveChat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
+                className={`flex flex-col ${message.isUser ? "items-end" : "items-start"}`}
               >
-                <div className={`flex items-start gap-2 max-w-[80%] ${message.isUser ? "flex-row-reverse" : ""}`}>
-                  {/* Avatar */}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    message.isUser 
-                      ? "bg-gradient-to-r from-blue-500 to-purple-500" 
-                      : "bg-gradient-to-r from-purple-500 to-pink-500"
-                  }`}>
-                    {message.isUser ? (
-                      <UserIcon className="h-4 w-4 text-white" />
-                    ) : (
-                      <SparklesIcon className="h-4 w-4 text-white" />
-                    )}
-                  </div>
-
-                  {/* Message Bubble */}
-                  <div className={`rounded-2xl px-4 py-2 ${
-                    message.isUser
-                      ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
-                  }`}>
-                    {message.isTyping ? (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.isUser ? "text-blue-100" : "text-gray-500 dark:text-gray-400"
-                        }`}>
-                          {formatTime(message.timestamp)}
-                        </p>
-                      </>
-                    )}
-                  </div>
+                {/* User/Bot Name and Avatar */}
+                <div className={`flex items-center gap-1.5 mb-1 ${message.isUser ? "flex-row-reverse" : ""}`}>
+                  <img 
+                    src={message.isUser 
+                      ? (user?.avatarUrl ? (user.avatarUrl.startsWith('http') ? user.avatarUrl : (user.avatarUrl.startsWith('/uploads') ? user.avatarUrl : `/uploads/avatars/${user.avatarUrl}`)) : (user?.image ? (user.image.startsWith('http') ? user.image : (user.image.startsWith('/uploads') ? user.image : `/uploads/avatars/${user.image}`)) : '/default-avatar.png'))
+                      : botAvatar
+                    } 
+                    alt={message.isUser ? (user?.name || 'User') : botName} 
+                    className="w-6 h-6 rounded-full object-cover border border-gray-300 dark:border-gray-600 flex-shrink-0"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/default-avatar.png';
+                    }}
+                  />
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {message.isUser ? (user?.name || 'Bạn') : botName}
+                  </span>
+                </div>
+                
+                {/* Message Bubble */}
+                <div className={`flex items-start gap-2 max-w-[85%] ${message.isUser ? "flex-row-reverse" : ""}`}>
+                  {message.isTyping ? (
+                    <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-2xl">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  ) : (
+                    <div className={`px-3 py-2 rounded-2xl ${
+                      message.isUser 
+                        ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white" 
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    }`}>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
+                      <p className={`text-[10px] mt-1 ${
+                        message.isUser ? "text-white/70" : "text-gray-500 dark:text-gray-400"
+                      }`}>
+                        {formatTime(message.timestamp)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

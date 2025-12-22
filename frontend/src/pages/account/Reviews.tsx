@@ -73,8 +73,8 @@ export default function ReviewsPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1 hidden lg:block">
-              <AccountSidebar />
-            </div>
+            <AccountSidebar />
+          </div>
             <div className="lg:col-span-3">
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="flex items-center justify-center space-x-3">
@@ -82,9 +82,9 @@ export default function ReviewsPage() {
                   <p className="text-gray-600 font-medium">Đang tải dữ liệu...</p>
                 </div>
               </div>
-            </div>
           </div>
-        </main>
+        </div>
+      </main>
       </div>
     );
   }
@@ -93,14 +93,14 @@ export default function ReviewsPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
+        {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              <AccountSidebar />
+          <AccountSidebar />
             </div>
-          </div>
+        </div>
 
-          {/* Content */}
+        {/* Content */}
           <div className="lg:col-span-3 space-y-6">
             {/* Header Section */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -253,7 +253,7 @@ export default function ReviewsPage() {
                   ))}
                 </div>
               </div>
-            </div>
+          </div>
 
             {/* Reviews List */}
             {(!Array.isArray(reviews) || reviews.length === 0) ? (
@@ -269,8 +269,8 @@ export default function ReviewsPage() {
                 >
                   <MapPinIcon className="w-5 h-5" />
                   Khám phá điểm đến
-                </Link>
-              </div>
+              </Link>
+            </div>
             ) : filteredReviews.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-xl p-12 border border-gray-100 text-center">
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -330,9 +330,9 @@ export default function ReviewsPage() {
 
                       {/* Stars Display */}
                       <div className="flex items-center gap-1 mb-4">
-                        {[...Array(5)].map((_, i) => (
+                          {[...Array(5)].map((_, i) => (
                           <StarIconSolid
-                            key={i}
+                              key={i}
                             className={`w-5 h-5 ${
                               i < (review.rating || 0) ? 'text-yellow-400' : 'text-gray-300'
                             }`}
@@ -364,7 +364,7 @@ export default function ReviewsPage() {
                         </button>
                       </div>
                     </div>
-                  </div>
+                        </div>
                 ))}
               </div>
             )}
@@ -373,11 +373,11 @@ export default function ReviewsPage() {
             {filteredReviews.length > 0 && (
               <div className="text-center text-sm text-gray-600">
                 Hiển thị <span className="font-semibold text-gray-900">{filteredReviews.length}</span> trong tổng số <span className="font-semibold text-gray-900">{reviews.length}</span> đánh giá
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
+    </main>
     </div>
   );
 }

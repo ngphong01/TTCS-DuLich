@@ -9,7 +9,8 @@ import {
   ExclamationCircleIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import AccountSidebar from "../../components/AccountSidebar";
 
@@ -20,7 +21,14 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetch('/api/booking', { credentials: 'include' })
+    const token = localStorage.getItem('tg_token');
+    fetch('/api/booking', {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
       .then((r) => r.json())
       .then((data) => {
         const list = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
@@ -81,8 +89,8 @@ export default function BookingsPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1 hidden lg:block">
-              <AccountSidebar />
-            </div>
+            <AccountSidebar />
+          </div>
             <div className="lg:col-span-3">
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="flex items-center justify-center space-x-3">
@@ -90,9 +98,9 @@ export default function BookingsPage() {
                   <p className="text-gray-600 font-medium">Đang tải dữ liệu...</p>
                 </div>
               </div>
-            </div>
           </div>
-        </main>
+        </div>
+      </main>
       </div>
     );
   }
@@ -101,14 +109,14 @@ export default function BookingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
+        {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              <AccountSidebar />
+          <AccountSidebar />
             </div>
-          </div>
+        </div>
 
-          {/* Content */}
+        {/* Content */}
           <div className="lg:col-span-3 space-y-6">
             {/* Header Section */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -235,7 +243,7 @@ export default function BookingsPage() {
                   </button>
                 </div>
               </div>
-            </div>
+          </div>
 
             {/* Bookings List */}
             {(!Array.isArray(bookings) || bookings.length === 0) ? (
@@ -251,8 +259,8 @@ export default function BookingsPage() {
                 >
                   <MapPinIcon className="w-5 h-5" />
                   Khám phá điểm đến
-                </Link>
-              </div>
+              </Link>
+            </div>
             ) : filteredBookings.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-xl p-12 border border-gray-100 text-center">
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -276,7 +284,7 @@ export default function BookingsPage() {
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
-                    <thead>
+                <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Mã đặt chỗ
@@ -293,8 +301,8 @@ export default function BookingsPage() {
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Thao tác
                         </th>
-                      </tr>
-                    </thead>
+                  </tr>
+                </thead>
                     <tbody className="divide-y divide-gray-200">
                       {filteredBookings.map((booking: any) => {
                         const statusConfig = getStatusConfig(booking.status);
@@ -324,8 +332,8 @@ export default function BookingsPage() {
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.text}`}>
                                 <StatusIcon className="w-4 h-4" />
                                 {statusConfig.label}
-                              </span>
-                            </td>
+                        </span>
+                      </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2 text-sm text-gray-700">
                                 <ClockIcon className="w-4 h-4 text-gray-400" />
@@ -337,18 +345,46 @@ export default function BookingsPage() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <Link
-                                to={`/bookings/${booking.id}`}
-                                className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm hover:underline"
-                              >
-                                Chi tiết →
-                              </Link>
+                              <div className="flex items-center gap-3">
+                                <Link
+                                  to={`/bookings/${booking.id}`}
+                                  className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm hover:underline"
+                                >
+                                  Chi tiết →
+                                </Link>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const token = localStorage.getItem('tg_token');
+                                      const response = await fetch(`/api/invoice/${booking.id}`, {
+                                        headers: { Authorization: `Bearer ${token}` },
+                                      });
+                                      if (!response.ok) throw new Error('Failed to generate invoice');
+                                      const blob = await response.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = `invoice-${booking.code}.pdf`;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      window.URL.revokeObjectURL(url);
+                                      document.body.removeChild(a);
+                                    } catch (error) {
+                                      alert('Lỗi tải hóa đơn');
+                                    }
+                                  }}
+                                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title="Tải hóa đơn PDF"
+                                >
+                                  <DocumentArrowDownIcon className="h-5 w-5" />
+                                </button>
+                              </div>
                             </td>
-                          </tr>
+                    </tr>
                         );
                       })}
-                    </tbody>
-                  </table>
+                </tbody>
+              </table>
                 </div>
 
                 {/* Mobile Card View */}
@@ -395,12 +431,41 @@ export default function BookingsPage() {
                           </div>
                         </div>
                         
-                        <Link
-                          to={`/bookings/${booking.id}`}
-                          className="mt-4 block text-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold py-2 px-4 rounded-lg transition-colors"
-                        >
-                          Xem chi tiết →
-                        </Link>
+                        <div className="mt-4 flex gap-2">
+                          <Link
+                            to={`/bookings/${booking.id}`}
+                            className="flex-1 text-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold py-2 px-4 rounded-lg transition-colors"
+                          >
+                            Chi tiết →
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const token = localStorage.getItem('tg_token');
+                                const response = await fetch(`/api/invoice/${booking.id}`, {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                });
+                                if (!response.ok) throw new Error('Failed to generate invoice');
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `invoice-${booking.code}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                              } catch (error) {
+                                alert('Lỗi tải hóa đơn');
+                              }
+                            }}
+                            className="px-4 py-2 bg-green-50 hover:bg-green-100 text-green-600 font-semibold rounded-lg transition-colors flex items-center gap-2"
+                            title="Tải hóa đơn PDF"
+                          >
+                            <DocumentArrowDownIcon className="h-5 w-5" />
+                            PDF
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -412,11 +477,11 @@ export default function BookingsPage() {
             {filteredBookings.length > 0 && (
               <div className="text-center text-sm text-gray-600">
                 Hiển thị <span className="font-semibold text-gray-900">{filteredBookings.length}</span> trong tổng số <span className="font-semibold text-gray-900">{bookings.length}</span> đặt chỗ
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
+    </main>
     </div>
   );
 }

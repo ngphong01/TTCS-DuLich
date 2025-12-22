@@ -14,24 +14,24 @@ export default function Footer() {
   return (
     <footer className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Main Footer Content */}
-      <div className="container mx-auto px-4 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+      <div className="container mx-auto px-4 py-10 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           
           {/* Brand Section */}
           <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center gap-3 mb-6 group">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
+            <Link to="/" className="flex items-center gap-2.5 mb-4 group">
+              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-shadow">
                 <img 
-                  src="https://png.pngtree.com/png-vector/20250112/ourmid/pngtree-travel-go-logo-blue-and-yellow-design-png-image_15159391.png"
+                  src="/uploads/avatars/travelgo-admin.png"
                   alt="TravelGo Logo"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 TravelGo
               </span>
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            <p className="text-gray-400 text-xs leading-relaxed mb-4">
               Nền tảng du lịch hàng đầu giúp bạn khám phá những điểm đến tuyệt vời trên khắp thế giới. 
               Đặt chỗ nhanh chóng, giá cả hợp lý và trải nghiệm không thể quên.
             </p>
@@ -87,8 +87,8 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-blue-400">Điều hướng</h3>
-            <ul className="space-y-3">
+            <h3 className="text-base font-bold mb-4 text-blue-400">Điều hướng</h3>
+            <ul className="space-y-2">
               <li>
                 <Link 
                   to="/destinations" 
@@ -103,7 +103,7 @@ export default function Footer() {
                   to="/categories" 
                   className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group"
                 >
-                  <GlobeAltIcon className="w-4 h-4 group-hover:text-purple-400 transition-colors" />
+                  <GlobeAltIcon className="w-4 h-4 group-hover:text-teal-400 transition-colors" />
                   <span>Danh mục</span>
                 </Link>
               </li>
@@ -143,8 +143,8 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-purple-400">Hỗ trợ</h3>
-            <ul className="space-y-3">
+            <h3 className="text-base font-bold mb-4 text-teal-400">Hỗ trợ</h3>
+            <ul className="space-y-2">
               <li>
                 <Link 
                   to="/about" 
@@ -198,27 +198,27 @@ export default function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-pink-400">Liên hệ</h3>
-            <ul className="space-y-4">
+            <h3 className="text-base font-bold mb-4 text-pink-400">Liên hệ</h3>
+            <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <BuildingOfficeIcon className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-gray-400 text-sm">Địa chỉ:</p>
-                  <p className="text-white text-sm">123 Đường Trần Phú</p>
-                  <p className="text-white text-sm">Quận Ba Đình, Hà Nội</p>
+                  <p className="text-white text-sm">6/160 Tân Triều</p>
+                  <p className="text-white text-sm">Thanh Trì, Hà Nội</p>
                 </div>
               </li>
               <li className="flex items-center gap-3">
                 <PhoneIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
                 <div>
                   <p className="text-gray-400 text-sm">Hotline:</p>
-                  <a href="tel:19001234" className="text-white text-sm hover:text-blue-400 transition-colors">
-                    1900 1234
+                  <a href="tel:0868156027" className="text-white text-sm hover:text-blue-400 transition-colors">
+                    0868156027
                   </a>
                 </div>
               </li>
               <li className="flex items-center gap-3">
-                <EnvelopeIcon className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                <EnvelopeIcon className="w-5 h-5 text-teal-400 flex-shrink-0" />
                 <div>
                   <p className="text-gray-400 text-sm">Email:</p>
                   <a 
@@ -250,12 +250,12 @@ export default function Footer() {
 
       {/* Bottom Bar */}
       <div className="border-t border-gray-700">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-400 text-sm text-center md:text-left">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+            <p className="text-gray-400 text-xs text-center md:text-left">
               © {currentYear} <span className="text-white font-semibold">TravelGo</span>. Tất cả quyền được bảo lưu.
             </p>
-            <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-4 text-xs">
               <a href="#terms" className="text-gray-400 hover:text-white transition-colors">
                 Điều khoản
               </a>

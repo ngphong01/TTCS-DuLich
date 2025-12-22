@@ -27,7 +27,7 @@ export default function SimpleRegister() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/simple-register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -58,7 +58,7 @@ export default function SimpleRegister() {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-500 via-teal-500 to-sky-500 bg-clip-text text-transparent">
                 TravelGo
               </h1>
               <p className="text-sm text-gray-500">Tạo tài khoản để khám phá thế giới</p>

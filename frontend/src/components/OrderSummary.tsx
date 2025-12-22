@@ -30,7 +30,7 @@ export default function OrderSummary({
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Tóm tắt đơn hàng</h3>
+      <h3 className="text-xl font-bold text-gray-800 mb-6">Tóm tắt tour</h3>
       
       <div className="space-y-4">
         {/* Base Price */}

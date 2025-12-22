@@ -13,6 +13,72 @@ import {
 } from '@heroicons/react/24/outline';
 import MapEmbed from '../components/MapEmbed';
 
+function NewsletterSection() {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+        setEmail('');
+        setTimeout(() => setSubmitted(false), 5000);
+      } else {
+        alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
+      }
+    } catch (error) {
+      console.error('Error subscribing:', error);
+      alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-white text-center">
+      <h2 className="text-3xl font-bold mb-4">Đăng ký nhận bản tin</h2>
+      <p className="text-white/90 mb-6 max-w-2xl mx-auto">
+        Nhận thông tin ưu đãi độc quyền, điểm đến mới và tin tức du lịch mỗi tuần
+      </p>
+      {submitted && (
+        <div className="mb-4 p-3 bg-green-500/20 rounded-lg border border-green-300/50">
+          <p className="text-green-100 font-semibold">Đăng ký thành công! Cảm ơn bạn đã quan tâm.</p>
+        </div>
+      )}
+      <form onSubmit={handleSubscribe} className="max-w-xl mx-auto flex gap-4">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Nhập email của bạn..."
+          required
+          className="flex-1 px-6 py-4 rounded-xl text-gray-900 text-lg focus:outline-none focus:ring-4 focus:ring-white/50"
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 transition-colors font-semibold text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký ngay'}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
@@ -26,16 +92,34 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setSubmitted(true);
-    setIsSubmitting(false);
-    setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    
-    setTimeout(() => setSubmitted(false), 5000);
+    try {
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: formData.email,
+          subject: formData.subject,
+          message: `Tên: ${formData.name}\nSĐT: ${formData.phone}\n\n${formData.message}`,
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+        setTimeout(() => setSubmitted(false), 5000);
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -49,53 +133,31 @@ export default function Contact() {
   const branches = [
     {
       city: 'Hà Nội',
-      address: '123 Đường Láng, Đống Đa, Hà Nội',
-      phone: '024 1234 5678',
-      email: 'hanoi@travelgo.vn',
+      address: '6/160 Tân Triều, Thanh Trì, Hà Nội',
+      phone: '0868156027',
+      email: 'phong@triennguyen.com',
       hours: '8:00 - 18:00',
     },
     {
       city: 'TP.HCM',
-      address: '456 Nguyễn Huệ, Quận 1, TP.HCM',
-      phone: '028 9876 5432',
-      email: 'hcmc@travelgo.vn',
+      address: '6/160 Tân Triều, Thanh Trì, Hà Nội',
+      phone: '0868156027',
+      email: 'phong@triennguyen.com',
       hours: '8:00 - 18:00',
     },
     {
       city: 'Đà Nẵng',
-      address: '789 Trần Phú, Hải Châu, Đà Nẵng',
-      phone: '0236 5555 8888',
-      email: 'danang@travelgo.vn',
+      address: '6/160 Tân Triều, Thanh Trì, Hà Nội',
+      phone: '0868156027',
+      email: 'phong@triennguyen.com',
       hours: '8:00 - 17:00',
-    },
-  ];
-
-  // Support channels
-  const supportChannels = [
-    {
-      name: 'Messenger',
-      icon: '💬',
-      link: '#',
-      description: 'Chat trực tiếp trên Facebook Messenger',
-    },
-    {
-      name: 'Zalo',
-      icon: '💙',
-      link: '#',
-      description: 'Liên hệ qua Zalo OA',
-    },
-    {
-      name: 'Telegram',
-      icon: '✈️',
-      link: '#',
-      description: 'Hỗ trợ nhanh qua Telegram',
     },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white py-16">
+      <section className="bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-500 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-6 py-2.5 mb-6">
@@ -120,7 +182,7 @@ export default function Contact() {
               <PhoneIcon className="h-8 w-8 text-blue-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Hotline</h3>
-            <p className="text-2xl font-bold text-blue-600 mb-2">1900 1234</p>
+            <p className="text-2xl font-bold text-blue-600 mb-2">0868156027</p>
             <p className="text-gray-600">24/7 hỗ trợ khách hàng</p>
           </div>
 
@@ -129,7 +191,7 @@ export default function Contact() {
               <EnvelopeIcon className="h-8 w-8 text-purple-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Email</h3>
-            <p className="text-lg font-semibold text-purple-600 mb-2">support@travelgo.vn</p>
+            <p className="text-lg font-semibold text-purple-600 mb-2">phong@triennguyen.com</p>
             <p className="text-gray-600">Phản hồi trong 24 giờ</p>
           </div>
 
@@ -138,8 +200,8 @@ export default function Contact() {
               <MapPinIcon className="h-8 w-8 text-pink-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Địa chỉ</h3>
-            <p className="text-lg text-gray-700 mb-2">123 Đường ABC, Quận XYZ</p>
-            <p className="text-gray-600">TP.HCM, Việt Nam</p>
+            <p className="text-lg text-gray-700 mb-2">6/160 Tân Triều</p>
+            <p className="text-gray-600">Thanh Trì, Hà Nội</p>
           </div>
         </div>
 
@@ -277,7 +339,7 @@ export default function Contact() {
                   <MapPinIcon className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div>
                     <p className="font-semibold text-gray-900">Địa chỉ</p>
-                    <p className="text-gray-600">123 Đường ABC, Quận XYZ, TP.HCM, Việt Nam</p>
+                    <p className="text-gray-600">6/160 Tân Triều, Thanh Trì, Hà Nội</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -290,26 +352,54 @@ export default function Contact() {
               </div>
             </div>
 
-            {/* Chat Support */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6">
+            {/* Direct Contact - Messenger & Zalo */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600" />
-                Hỗ trợ trực tuyến
+                <PhoneIcon className="h-6 w-6 text-green-600" />
+                Liên hệ trực tiếp
               </h3>
               <p className="text-gray-700 mb-4">
-                Chat trực tiếp với chúng tôi để được hỗ trợ nhanh chóng
+                Nhắn tin cho chúng tôi qua các kênh sau
               </p>
-              <div className="grid grid-cols-3 gap-3">
-                {supportChannels.map((channel, i) => (
-                  <a
-                    key={i}
-                    href={channel.link}
-                    className="bg-white rounded-lg p-4 text-center hover:shadow-lg transition-all"
-                  >
-                    <div className="text-3xl mb-2">{channel.icon}</div>
-                    <div className="text-sm font-semibold text-gray-900">{channel.name}</div>
-                  </a>
-                ))}
+              <div className="grid grid-cols-2 gap-4">
+                <a
+                  href="https://m.me/your-page"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all hover:shadow-md"
+                >
+                  <img 
+                    src="/uploads/avatars/Messenger.png" 
+                    alt="Messenger"
+                    className="w-12 h-12 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/default-avatar.png';
+                    }}
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">Facebook Messenger</p>
+                    <p className="text-xs text-gray-600">Chat ngay</p>
+                  </div>
+                </a>
+                <a
+                  href="https://zalo.me/0868156027"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all hover:shadow-md"
+                >
+                  <img 
+                    src="/uploads/avatars/zalo.jpg" 
+                    alt="Zalo"
+                    className="w-12 h-12 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/default-avatar.png';
+                    }}
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">Zalo</p>
+                    <p className="text-xs text-gray-600">0868156027</p>
+                  </div>
+                </a>
               </div>
             </div>
 

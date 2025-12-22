@@ -33,6 +33,7 @@ export async function createDestination(data: {
   name: string;
   slug: string;
   description?: string;
+  image?: string | null;
   featured?: boolean;
   categoryId?: number | null;
   price?: number | null;

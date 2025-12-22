@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSimpleAuth } from "../lib/use-simple-auth";
 import PaymentMethods from "./PaymentMethods";
 import CouponInput from "./CouponInput";
@@ -147,19 +147,19 @@ export default function EnhancedCheckoutForm({
 
       const booking = await res.json();
       setBookingId(booking.id);
-      setSuccess(true);
 
-      // Handle payment based on method
-      if (selectedPaymentMethod === 'bank_transfer') {
-        // For bank transfer, just show success
+      const isOfflinePayment =
+        selectedPaymentMethod === 'bank_transfer' ||
+        selectedPaymentMethod === 'cod';
+
+      if (isOfflinePayment) {
+        setSuccess(true);
         setCurrentStep(3);
-      } else if (selectedPaymentMethod === 'cod') {
-        // For COD, just show success
-        setCurrentStep(3);
-      } else {
-        // For online payments, redirect to payment gateway
-        await handlePayment(booking.id);
+        return;
       }
+
+      // For online payments, redirect to payment gateway
+      await handlePayment(booking.id);
 
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -178,49 +178,41 @@ export default function EnhancedCheckoutForm({
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
-      
-      if (selectedPaymentMethod === 'stripe') {
-        const res = await fetch("/api/payment/create", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ bookingId, provider: 'stripe' }),
-        });
-        
-        const data = await res.json();
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          throw new Error(data.error || "Không thể tạo phiên thanh toán");
-        }
-      } else if (selectedPaymentMethod === 'vnpay') {
-        // Redirect to VNPAY
-        const res = await fetch("/api/payment/create", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ bookingId, provider: 'vnpay' }),
-        });
-        
-        const data = await res.json();
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          throw new Error(data.error || "Không thể tạo phiên thanh toán VNPAY");
-        }
-      } else if (selectedPaymentMethod === 'momo') {
-        // Redirect to MoMo
-        const res = await fetch("/api/payment/create", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ bookingId, provider: 'momo' }),
-        });
-        
-        const data = await res.json();
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          throw new Error(data.error || "Không thể tạo phiên thanh toán MoMo");
-        }
+
+      const supportedGateways = new Set(['stripe', 'vnpay', 'momo', 'paypal']);
+
+      if (!supportedGateways.has(selectedPaymentMethod)) {
+        // For unsupported gateways (e.g. QR methods handled inline), just finish booking
+        setCurrentStep(3);
+        return;
       }
+
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ bookingId, provider: selectedPaymentMethod }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data?.error ||
+            `Không thể tạo phiên thanh toán ${selectedPaymentMethod.toUpperCase()}`
+        );
+      }
+
+      if (data?.url && data.url !== '#') {
+        window.location.href = data.url;
+        return;
+      }
+
+      throw new Error(
+        data?.error ||
+          (selectedPaymentMethod === 'paypal'
+            ? "Không tìm thấy đường dẫn xác nhận PayPal"
+            : "Không thể tạo phiên thanh toán")
+      );
     } catch (err: unknown) {
       const error = err as { message?: string };
       setError(error.message || "Có lỗi xảy ra");
@@ -228,6 +220,12 @@ export default function EnhancedCheckoutForm({
       setIsProcessing(false);
     }
   };
+
+  useEffect(() => {
+    if (success) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [success]);
 
   if (success) {
     return (

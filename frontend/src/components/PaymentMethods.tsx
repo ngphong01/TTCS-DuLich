@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { getActivePaymentMethods, getPaymentMethodById, type PaymentMethod } from "../lib/payment-methods";
 
 interface PaymentMethodsProps {
@@ -9,16 +8,14 @@ interface PaymentMethodsProps {
   orderAmount: number;
 }
 
-export default function PaymentMethods({ 
-  selectedMethod, 
-  onMethodChange, 
+export default function PaymentMethods({
+  selectedMethod,
+  onMethodChange,
   country = 'VN',
   orderAmount 
 }: PaymentMethodsProps) {
-  const [showAllMethods, setShowAllMethods] = useState(false);
-  
   const activeMethods = getActivePaymentMethods(country);
-  const displayedMethods = showAllMethods ? activeMethods : activeMethods.slice(0, 4);
+  const displayedMethods = activeMethods;
 
   // Bank transfer info
   const BANK_ACCOUNT_NAME = "DAO VAN PHONG";
@@ -126,7 +123,7 @@ export default function PaymentMethods({
                 <p className="text-sm text-gray-600">{method.description}</p>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-xs text-gray-500">Phí: {method.fees}</span>
-                  {method.countries.length > 0 && (
+                  {Array.isArray(method.countries) && method.countries.length > 0 && (
                     <span className="text-xs text-gray-500">
                       {method.countries.includes('Global') ? 'Toàn cầu' : method.countries.join(', ')}
                     </span>
@@ -147,16 +144,6 @@ export default function PaymentMethods({
           </label>
         ))}
       </div>
-
-      {activeMethods.length > 4 && (
-        <button
-          type="button"
-          onClick={() => setShowAllMethods(!showAllMethods)}
-          className="w-full py-2 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
-        >
-          {showAllMethods ? 'Thu gọn' : `Xem thêm ${activeMethods.length - 4} phương thức khác`}
-        </button>
-      )}
 
       {/* Payment Method Details */}
       {selectedMethod && (

@@ -3,8 +3,23 @@ PORT=3000
 FRONTEND_URL=http://localhost:3001
 ALLOWED_ORIGIN=http://localhost:3001
 
+# Email Configuration
+# EMAIL_MODE=log       # log-only mode (dev)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+# (Hoặc dùng EMAIL_HOST/EMAIL_USER/... nếu đã lỡ đặt theo naming cũ)
+
 # Database - MySQL với password 123456 và port 3306
 DATABASE_URL=mysql://root:123456@localhost:3306/travelgo
+
+# Redis Cache
+# Bật cache bằng cách set REDIS_ENABLED=true và cung cấp REDIS_URL phù hợp
+REDIS_ENABLED=false
+REDIS_URL=redis://127.0.0.1:6379
+CACHE_TTL_SECONDS=300
 
 # JWT Secret (change this to a secure random string)
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -16,7 +31,25 @@ GOOGLE_CLIENT_SECRET=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
 # Google OAuth URLs
 OAUTH_GOOGLE_AUTH_URL=https://accounts.google.com/o/oauth2/v2/auth
 OAUTH_GOOGLE_TOKEN_URL=https://oauth2.googleapis.com/token
-OAUTH_GOOGLE_USERINFO_URL=https://www.googleapis.com/oauth2/v2/userinfo
+OAUTH_GOOGLE_USERINFO_URL=https://www.googleapis.com/oauth2/v3/userinfo
 OAUTH_GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/callback/google
 OAUTH_GOOGLE_SCOPE=openid email profile
 
+# PayPal Configuration
+PAYPAL_CLIENT_ID=your-paypal-client-id
+PAYPAL_SECRET=your-paypal-secret
+PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+PAYPAL_CURRENCY=USD
+PAYPAL_SOURCE_CURRENCY=VND
+PAYPAL_EXCHANGE_RATE=24000
+PAYPAL_RETURN_URL=http://localhost:3001/checkout/paypal/success
+PAYPAL_CANCEL_URL=http://localhost:3001/checkout/paypal/cancel
+PAYPAL_BRAND_NAME=TravelGo
+
+# Cloudflare Turnstile
+TURNSTILE_SITE_KEY=your-cloudflare-turnstile-site-key
+TURNSTILE_SECRET_KEY=your-cloudflare-turnstile-secret-key
+
+# AI Configuration
+GEMINI_API_KEY=your-gemini-api-key-here
+ENABLE_AI_AUTOMATION=false

@@ -31,7 +31,14 @@ export default function LoyaltyPage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch("/api/account/loyalty")
+    const token = localStorage.getItem('tg_token');
+    fetch("/api/account/loyalty", {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
       .then((r) => r.json())
       .then((d) => !cancelled && setData((d && (d.data ?? d)) as Loyalty))
       .catch(() => !cancelled && setError("Không tải được thông tin thành viên"))
@@ -291,7 +298,7 @@ export default function LoyaltyPage() {
                           <ClockIcon className="w-8 h-8 text-gray-400" />
                         </div>
                         <p className="text-gray-600 font-medium">Chưa có lịch sử giao dịch điểm</p>
-                        <p className="text-sm text-gray-500 mt-1">Hoàn thành đơn hàng để nhận điểm thưởng</p>
+                        <p className="text-sm text-gray-500 mt-1">Hoàn thành tour để nhận điểm thưởng</p>
                       </div>
                     ) : (
                       <div className="space-y-3">

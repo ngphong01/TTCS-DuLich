@@ -12,7 +12,7 @@ const groups = [
   {
     title: "Hoạt động du lịch",
     items: [
-      { href: "/account/bookings", label: "Đơn đặt chỗ", Icon: ClipboardDocumentListIcon },
+      { href: "/account/bookings", label: "Tour đã đặt", Icon: ClipboardDocumentListIcon },
       { href: "/account/payments", label: "Thanh toán & hóa đơn", Icon: CreditCardIcon },
     ],
   },

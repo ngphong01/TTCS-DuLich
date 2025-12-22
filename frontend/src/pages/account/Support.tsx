@@ -34,9 +34,14 @@ export default function SupportPage() {
     }
 
     try {
+      const token = localStorage.getItem('tg_token');
       const res = await fetch("/api/account/support", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ subject, message, category }),
       });
       if (!res.ok) {
@@ -267,7 +272,7 @@ export default function SupportPage() {
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-gray-500 uppercase">Hotline</p>
-                        <p className="text-sm font-bold text-gray-900">1900 xxxx</p>
+                        <p className="text-sm font-bold text-gray-900">0868156027</p>
                         <p className="text-xs text-gray-600 mt-1">24/7 hỗ trợ</p>
                       </div>
                     </div>
@@ -278,7 +283,7 @@ export default function SupportPage() {
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-gray-500 uppercase">Email</p>
-                        <p className="text-sm font-bold text-gray-900">support@travelgo.vn</p>
+                        <p className="text-sm font-bold text-gray-900">phong@triennguyen.com</p>
                         <p className="text-xs text-gray-600 mt-1">Phản hồi trong 24h</p>
                       </div>
                     </div>

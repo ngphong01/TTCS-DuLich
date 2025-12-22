@@ -13,8 +13,13 @@ model User {
   passwordHash  String
   name          String
   role          Role      @default(USER)
-  avatarUrl     String?
+  avatarUrl     String?  @db.Text
   settings      Json?
+  resetToken    String?
+  resetTokenExpiry DateTime?
+  emailVerified Boolean  @default(false)
+  verificationToken String?
+  verificationTokenExpiry DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   bookings      Booking[]
@@ -22,6 +27,25 @@ model User {
   notifications Notification[]
   wishlist      Wishlist[]
   loyalty       Loyalty?
+  tourBookings  BookingTour[]
+  tourReviews   TourReview[]
+  promoCodeUsages PromoCodeUsage[]
+  reviewHelpfulVotes ReviewHelpfulVote[]
+  tourReviewHelpfulVotes TourReviewHelpfulVote[]
+  refreshTokens RefreshToken[]
+  referredBy User? @relation("UserReferrals", fields: [referredById], references: [id])
+  referredById Int?
+  referrals User[] @relation("UserReferrals")
+  referralCode String? @unique
+  dateOfBirth DateTime? // For birthday discount
+  phone String? // For phone verification
+  phoneVerified Boolean @default(false)
+  phoneVerificationCode String?
+  phoneVerificationExpiry DateTime?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret String?
+  pushSubscription Json? // Web Push subscription object
+  language String? @default("en") // User preferred language (BCP-47: en, vi, fr, ja, ko, zh-CN, etc.)
 }
 
 model Destination {
@@ -38,6 +62,10 @@ model Destination {
   reviews      Review[]
   bookings     Booking[]
   wishlist     Wishlist[]
+  hotels       Hotel[]
+  restaurants  Restaurant[]
+  tours        Tour[]
+  stories      Story[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -75,7 +103,11 @@ model Review {
   destinationId Int
   rating        Int
   comment       String?
+  images        Json?       // Array of image URLs
+  approved      Boolean     @default(false) // Admin approval
+  helpfulCount  Int         @default(0) // Số lượt vote hữu ích
   createdAt     DateTime    @default(now())
+  helpfulVotes ReviewHelpfulVote[]
 }
 
 model Notification {
@@ -121,19 +153,308 @@ model SupportTicket {
   createdAt DateTime @default(now())
 }
 
+model Hotel {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  address     String?
+  city        String?
+  country     String?   @default("Việt Nam")
+  pricePerNight Int     @default(0)
+  rating      Float     @default(0)
+  featured    Boolean   @default(false)
+  amenities   Json?     // [wifi, parking, pool, gym, spa]
+  contact     String?
+  website     String?
+  destination Destination? @relation(fields: [destinationId], references: [id])
+  destinationId Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Restaurant {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  address     String?
+  city        String?
+  country     String?   @default("Việt Nam")
+  cuisine     String?   // Vietnamese, Italian, Japanese, etc.
+  priceRange  String?   // $, $$, $$$, $$$$
+  rating      Float     @default(0)
+  featured    Boolean   @default(false)
+  amenities   Json?     // [wifi, parking, delivery, outdoor]
+  contact     String?
+  website     String?
+  openingHours Json?    // {mon: "9:00-22:00", tue: "9:00-22:00", ...}
+  destination Destination? @relation(fields: [destinationId], references: [id])
+  destinationId Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 enum Role {
   USER
   ADMIN
+  STAFF
+  EDITOR
 }
 
 enum BookingStatus {
   PENDING
   CONFIRMED
-  CANCELED
+  COMPLETED
+  CANCELLED
 }
 
 enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
+}
+
+model Tour {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  shortDescription String?
+  image       String?
+  photos      Json?     // Array of image URLs
+  duration    Int       @default(1) // Number of days
+  price       Int       @default(0) // Base price (adult price)
+  adultPrice  Int?      // Price for adults
+  childPrice  Int?      // Price for children
+  originalPrice Int?    // For discount display
+  rating      Float     @default(0)
+  reviewCount Int       @default(0)
+  tags        Json?     // ["Adventure", "Family", "Beach"]
+  featured    Boolean   @default(false)
+  highlights  Json?     // Array of highlight objects: {icon: "star", text: "..."}
+  itinerary   Json?     // Array of day objects: {day: 1, title: "...", activities: [...]}
+  map         String?   // Google Maps embed URL or coordinates
+  faq         Json?     // Array of FAQ objects: {question: "...", answer: "..."}
+  policies    Json?     // {cancellation: "...", refund: "..."}
+  transport   String?   // "Bus", "Flight", "Train", etc.
+  availability Int      @default(0) // Số chỗ còn lại
+  maxCapacity Int?      // Số chỗ tối đa
+  seasonalPricing Json? // {low: {price: 1000000, months: [1,2,3]}, high: {price: 1500000, months: [6,7,8]}}
+  destination Destination? @relation(fields: [destinationId], references: [id])
+  destinationId Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    BookingTour[]
+  reviews     TourReview[]
+}
+
+model BookingTour {
+  id          Int       @id @default(autoincrement())
+  tour        Tour      @relation(fields: [tourId], references: [id])
+  tourId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  code        String    @unique
+  status      BookingStatus @default(PENDING)
+  totalAmount Int
+  participants Int      @default(1)
+  adults      Int?      @default(0) // Số người lớn
+  children    Int?      @default(0) // Số trẻ em
+  date        DateTime  // Tour departure date
+  passportFiles Json?   // Array of passport file URLs for international tours
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payment     PaymentTour?
+}
+
+model PaymentTour {
+  id         Int        @id @default(autoincrement())
+  booking    BookingTour @relation(fields: [bookingId], references: [id])
+  bookingId  Int        @unique
+  amount     Int
+  status     PaymentStatus @default(PENDING)
+  provider   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model TourReview {
+  id          Int       @id @default(autoincrement())
+  tour        Tour      @relation(fields: [tourId], references: [id])
+  tourId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  rating      Int
+  comment     String?
+  approved    Boolean   @default(false) // Admin approval
+  helpfulCount Int      @default(0) // Số lượt vote hữu ích
+  createdAt   DateTime  @default(now())
+  helpfulVotes TourReviewHelpfulVote[]
+}
+
+model ReviewHelpfulVote {
+  id        Int      @id @default(autoincrement())
+  review    Review   @relation(fields: [reviewId], references: [id])
+  reviewId  Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+  @@unique([reviewId, userId])
+}
+
+model TourReviewHelpfulVote {
+  id          Int         @id @default(autoincrement())
+  tourReview  TourReview  @relation(fields: [tourReviewId], references: [id])
+  tourReviewId Int
+  user        User        @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime    @default(now())
+  @@unique([tourReviewId, userId])
+}
+
+model NewsletterSubscription {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  subscribed Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  sessionId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  session   ChatSession @relation(fields: [sessionId], references: [id])
+  sessionId Int
+  role      String   // "user" or "assistant"
+  content   String   @db.Text // Use TEXT type for long AI responses
+  createdAt DateTime @default(now())
+}
+
+model PromoCode {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique
+  description   String?
+  discountType  String    // "PERCENTAGE" or "FIXED"
+  discountValue Int       // Percentage (0-100) or fixed amount in VND
+  minAmount     Int       @default(0) // Minimum order amount to use
+  maxDiscount   Int?      // Maximum discount amount (for percentage)
+  usageLimit    Int?      // Total usage limit (null = unlimited)
+  usedCount     Int       @default(0)
+  validFrom     DateTime
+  validUntil    DateTime
+  active        Boolean   @default(true)
+  applicableTo  Json?     // ["ALL", "TOUR", "DESTINATION", "COMBO"] or specific IDs
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  usages        PromoCodeUsage[]
+}
+
+model PromoCodeUsage {
+  id          Int       @id @default(autoincrement())
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  promoCodeId Int
+  user        User?     @relation(fields: [userId], references: [id])
+  userId      Int?
+  bookingId   Int?      // Reference to booking that used this code
+  amount      Int       // Discount amount applied
+  createdAt   DateTime  @default(now())
+}
+
+model Blog {
+  id            Int       @id @default(autoincrement())
+  title         String
+  slug          String    @unique
+  excerpt       String?   @db.Text
+  content       String    @db.Text
+  featuredImage String?
+  author        String?   @default("TravelGo Team")
+  category      String?   // "Travel Tips", "Destinations", "Reviews", etc.
+  tags          Json?     // Array of tags
+  seoTitle      String?
+  seoDescription String?  @db.Text
+  seoKeywords   String?
+  published     Boolean   @default(false)
+  publishedAt   DateTime?
+  views         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Story {
+  id            Int          @id @default(autoincrement())
+  title         String
+  slug          String       @unique
+  content       String       @db.Text
+  excerpt       String?      @db.Text
+  image         String?
+  author        String?      @default("TravelGo AI")
+  featured      Boolean      @default(false)
+  destination   Destination? @relation(fields: [destinationId], references: [id])
+  destinationId Int?
+  category      String?      // "Experience", "Customer Story", "Travel Guide"
+  tags          Json?        // Array of tags
+  likes         Int          @default(0)
+  views         Int          @default(0)
+  published     Boolean      @default(true)
+  publishedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Banner {
+  id          Int       @id @default(autoincrement())
+  name        String
+  imageUrl    String
+  linkUrl     String?   // URL to redirect
+  description String?
+  position    String    // "HOME_HERO", "DESTINATION_PAGE", "TOUR_PAGE", etc.
+  isActive    Boolean   @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ActivityLog {
+  id          Int       @id @default(autoincrement())
+  userId      Int?      // Admin user who performed the action
+  action      String    // "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", etc.
+  entityType  String    // "USER", "TOUR", "DESTINATION", "BOOKING", etc.
+  entityId    Int?      // ID of the affected entity
+  description String    @db.Text
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?     // Additional data about the action
+  createdAt   DateTime  @default(now())
+}
+
+model EmailTemplate {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // "welcome", "booking_confirmation", "password_reset", etc.
+  subject     String
+  body        String    @db.Text // HTML content
+  variables   Json?     // Available variables: {{name}}, {{email}}, etc.
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

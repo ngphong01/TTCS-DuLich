@@ -1,0 +1,52 @@
+{
+  "home": "Trang chủ",
+  "destinations": "Điểm đến",
+  "tours": "Tour",
+  "hotels": "Khách sạn",
+  "restaurants": "Nhà hàng",
+  "blog": "Blog",
+  "contact": "Liên hệ",
+  "about": "Về chúng tôi",
+  "signIn": "Đăng nhập",
+  "signUp": "Đăng ký",
+  "account": "Tài khoản",
+  "logout": "Đăng xuất",
+  "admin": "Quản trị",
+  "explore": "Khám phá",
+  "services": "Dịch vụ",
+  "promotions": "Ưu đãi",
+  "support": "Hỗ trợ",
+  "bookings": "Đặt chỗ",
+  "tagline": "Khám phá thế giới",
+  "exploreSubmenu": {
+    "stories": "Cảm hứng",
+    "storiesDesc": "Câu chuyện du lịch thực tế",
+    "storiesSubDesc": "Tìm cảm hứng từ trải nghiệm",
+    "featured": "Xu hướng",
+    "featuredDesc": "Hot nhất tuần này",
+    "featuredSubDesc": "Điểm đến đang trending",
+    "categories": "Theo sở thích",
+    "categoriesDesc": "Khám phá theo chủ đề",
+    "categoriesSubDesc": "Biển, thành phố, thiên nhiên...",
+    "destinations": "Tất cả điểm đến",
+    "destinationsDesc": "Xem tất cả & so sánh",
+    "destinationsSubDesc": "200+ điểm đến đang chờ"
+  },
+  "servicesSubmenu": {
+    "hotels": "Khách sạn",
+    "hotelsDesc": "Tìm khách sạn phù hợp",
+    "restaurants": "Nhà hàng",
+    "restaurantsDesc": "Khám phá ẩm thực"
+  },
+  "supportSubmenu": {
+    "about": "Giới thiệu",
+    "aboutDesc": "Về TravelGo",
+    "contact": "Liên hệ",
+    "contactDesc": "Hỗ trợ khách hàng"
+  },
+  "userMenu": {
+    "user": "Người dùng",
+    "admin": "Quản trị viên"
+  }
+}
+

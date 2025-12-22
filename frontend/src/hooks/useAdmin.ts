@@ -2,10 +2,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getSummary, getUsers } from '../services/admin';
 
-export function useAdminSummary() {
+export function useAdminSummary(period?: '7days' | '30days' | '3months') {
   return useQuery({
-    queryKey: ['admin', 'summary'],
-    queryFn: getSummary,
+    queryKey: ['admin', 'summary', period],
+    queryFn: () => getSummary(period),
   });
 }
 

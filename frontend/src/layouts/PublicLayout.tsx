@@ -222,23 +222,23 @@ export default function PublicLayout() {
                     <EnvelopeIcon className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" />
                     <a 
                       className="hover:text-blue-400 transition-colors break-words" 
-                      href="mailto:support@travelgo.example"
+                      href="mailto:phong@triennguyen.com"
                     >
-                      support@travelgo.example
+                      phong@triennguyen.com
                     </a>ư
                   </li>
                   <li className="flex items-center gap-2">
                     <PhoneIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
                     <a 
                       className="hover:text-blue-400 transition-colors" 
-                      href="tel:19001234"
+                      href="tel:0868156027"
                     >
-                      1900 1234
+                      0868156027
                     </a>
                   </li>
                   <li className="flex items-start gap-2">
                     <HomeIcon className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" />
-                    <span>123 Trần Phú, Hà Nội</span>
+                    <span>6/160 Tân Triều, Thanh Trì, Hà Nội</span>
                   </li>
                 </ul>
               </div>

@@ -1,30 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FireIcon,
-  ClockIcon,
   GiftIcon,
+  TagIcon,
+  ChevronRightIcon,
   SparklesIcon,
+  XMarkIcon,
+  StarIcon,
+  MapPinIcon,
+  ClockIcon,
+  CalendarDaysIcon,
   TicketIcon,
   UserGroupIcon,
-  AcademicCapIcon,
-  BuildingOfficeIcon,
-  CreditCardIcon,
-  CheckCircleIcon,
-  StarIcon,
-  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
-import {
-  FireIcon as FireIconSolid,
-  StarIcon as StarIconSolid,
-} from '@heroicons/react/24/solid';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+
+type TabType = 'today' | 'combo' | 'member' | 'season' | 'flight-hotel';
+type DiscountFilter = 'all' | 10 | 20 | 30 | 50;
+type ProductType = 'all' | 'tour' | 'combo' | 'hotel' | 'flight';
+type TimeFilter = 'all' | 'today' | 'weekend' | 'holiday';
+
+interface Deal {
+  id: number;
+  title: string;
+  originalPrice: number;
+  salePrice: number;
+  discount: number;
+  imageUrl: string;
+  destination?: string;
+  validUntil: string;
+  duration?: string;
+  rating?: number;
+  reviewCount?: number;
+  includes?: string[];
+  reason?: string;
+  tag?: 'hot' | 'new' | 'limited';
+}
 
 export default function Deals() {
-  const [activeTab, setActiveTab] = useState<'today' | 'combo' | 'member' | 'season'>('today');
-  const [discountFilter, setDiscountFilter] = useState<'all' | 10 | 20 | 25 | 30>(
-    'all'
-  );
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('today');
+  const [discountFilter, setDiscountFilter] = useState<DiscountFilter>('all');
+  const [productFilter, setProductFilter] = useState<ProductType>('all');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [destinationFilter, setDestinationFilter] = useState<string>('all');
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Flash Sale Countdown
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
@@ -39,33 +60,41 @@ export default function Deals() {
         } else if (prev.hours > 0) {
           return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
         }
-        return prev;
+        return { hours: 23, minutes: 59, seconds: 59 };
       });
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Flash Sale Deals
-  const flashSales = [
+  // Mock data
+  const flashSales: Deal[] = [
     {
       id: 1,
-      title: 'Tour Đà Lạt 3N2Đ',
+      title: 'Tour Đà Lạt 3N2Đ - Thành phố ngàn hoa',
       originalPrice: 4500000,
       salePrice: 3150000,
       discount: 30,
-      image: '🏔️',
       imageUrl: '/uploads/destinations/Tour-Da-Lat-3-Ngay-2-Dem.png',
-      timeLeft: '2 giờ',
+      destination: 'Đà Lạt',
+      validUntil: '15/11/2025',
+      duration: '3 ngày 2 đêm',
+      rating: 4.8,
+      reviewCount: 230,
+      tag: 'hot',
     },
     {
       id: 2,
-      title: 'Phú Quốc 4N3Đ',
+      title: 'Phú Quốc 4N3Đ - Đảo ngọc thiên đường',
       originalPrice: 5500000,
       salePrice: 3850000,
       discount: 30,
-      image: '🏖️',
       imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
-      timeLeft: '5 giờ',
+      destination: 'Phú Quốc',
+      validUntil: '20/11/2025',
+      duration: '4 ngày 3 đêm',
+      rating: 4.9,
+      reviewCount: 450,
+      tag: 'hot',
     },
     {
       id: 3,
@@ -73,572 +102,842 @@ export default function Deals() {
       originalPrice: 3800000,
       salePrice: 2660000,
       discount: 30,
-      image: '⛰️',
       imageUrl: '/uploads/destinations/Combo Hà Nội - Hạ Long.jpg',
-      timeLeft: '1 giờ',
+      destination: 'Hà Nội, Hạ Long',
+      validUntil: '18/11/2025',
+      duration: '3 ngày 2 đêm',
+      rating: 4.7,
+      reviewCount: 180,
+      tag: 'new',
     },
     {
       id: 4,
-      title: 'Nha Trang 3N2Đ',
+      title: 'Nha Trang 3N2Đ - Biển xanh cát trắng',
       originalPrice: 4200000,
       salePrice: 2940000,
       discount: 30,
-      image: '🌊',
       imageUrl: '/uploads/destinations/Nha Trang 3N2Đ.jpg',
-      timeLeft: '4 giờ',
-    },
-    {
-      id: 5,
-      title: 'Hội An - Đà Nẵng',
-      originalPrice: 3600000,
-      salePrice: 2520000,
-      discount: 30,
-      image: '🏮',
-      imageUrl: '/uploads/destinations/Hội An - Đà Nẵng.jpg',
-      timeLeft: '6 giờ',
-    },
-    {
-      id: 6,
-      title: 'Sapa Trekking 2N1Đ',
-      originalPrice: 3000000,
-      salePrice: 2100000,
-      discount: 30,
-      image: '⛰️',
-      imageUrl: '/uploads/destinations/Sapa Trekking 2N1Đ.jpg',
-      timeLeft: '8 giờ',
+      destination: 'Nha Trang',
+      validUntil: '22/11/2025',
+      duration: '3 ngày 2 đêm',
+      rating: 4.6,
+      reviewCount: 320,
+      tag: 'limited',
     },
   ];
 
-  // Vouchers
-  const vouchers = [
-    { id: 1, discount: 5, code: 'TRAVEL5', minOrder: 1000000, imageUrl: '/uploads/destinations/Combo Hà Nội - Hạ Long.jpg', title: 'Ưu đãi nhẹ nhàng' },
-    { id: 2, discount: 10, code: 'TRAVEL10', minOrder: 3000000, imageUrl: '/uploads/destinations/Nha Trang 3N2Đ.jpg', title: 'Giảm 10% đơn từ 3 triệu' },
-    { id: 3, discount: 15, code: 'TRAVEL15', minOrder: 5000000, imageUrl: '/uploads/destinations/Tour-Da-Lat-3-Ngay-2-Dem.png', title: 'Giảm sâu 15%' },
-    { id: 4, discount: 20, code: 'TRAVEL20', minOrder: 7000000, imageUrl: '/uploads/destinations/combo-ve-may-bay-va-khach-san.jpg', title: 'Combo bay + khách sạn' },
-    { id: 5, discount: 25, code: 'MEGA25', minOrder: 10000000, imageUrl: '/uploads/destinations/Đi nhóm - Ưu đãi thêm người.jpg', title: 'Đi nhóm càng rẻ' },
-    { id: 6, discount: 30, code: 'HOT30', minOrder: 15000000, imageUrl: '/uploads/destinations/Staycation cuối tuần.jpg', title: 'Siêu ưu đãi 30%' },
-  ];
-
-  async function copyCode(code: string) {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopiedCode(code);
-      setTimeout(() => setCopiedCode(null), 1200);
-    } catch {}
-  }
-
-  // Combos
-  const combos = [
+  const combos: Deal[] = [
     {
       id: 1,
       title: 'Tour + Khách sạn + Vé máy bay',
-      description: 'Trọn gói tiết kiệm 30%',
       originalPrice: 8000000,
       salePrice: 5600000,
-      savings: 2400000,
-      image: '✈️',
+      discount: 30,
       imageUrl: '/uploads/destinations/combo-ve-may-bay-va-khach-san.jpg',
+      destination: 'Nhiều điểm đến',
+      validUntil: '30/11/2025',
       includes: ['Tour 3 ngày', 'Khách sạn 4 sao', 'Vé máy bay khứ hồi', 'Bữa sáng'],
     },
     {
       id: 2,
       title: 'Book sớm - Giảm sâu',
-      description: 'Đặt trước 30 ngày',
       originalPrice: 5000000,
       salePrice: 3750000,
-      savings: 1250000,
-      image: '📅',
+      discount: 25,
       imageUrl: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=1200&auto=format&fit=crop',
+      destination: 'Tất cả tour',
+      validUntil: '31/12/2025',
       includes: ['Giảm 25% khi đặt sớm', 'Tặng bảo hiểm du lịch', 'Hỗ trợ visa'],
     },
     {
       id: 3,
       title: 'Đi nhóm - Ưu đãi thêm người',
-      description: 'Mua 2 tour chỉ tính giá 1 người',
       originalPrice: 6000000,
       salePrice: 3000000,
-      savings: 3000000,
-      image: '👥',
+      discount: 50,
       imageUrl: '/uploads/destinations/Đi nhóm - Ưu đãi thêm người.jpg',
+      destination: 'Tất cả tour',
+      validUntil: '25/11/2025',
       includes: ['Từ 4 người trở lên', 'Giảm thêm 10%', 'Tặng bữa tối đặc biệt'],
     },
-    {
-      id: 4,
-      title: 'Staycation cuối tuần',
-      description: 'Nghỉ dưỡng 2N1Đ trong thành phố',
-      originalPrice: 2600000,
-      salePrice: 1990000,
-      savings: 610000,
-      image: '🏨',
-      imageUrl: '/uploads/destinations/Staycation cuối tuần.jpg',
-      includes: ['Khách sạn 4 sao', 'Buffet sáng', 'Spa 30 phút'],
-    },
   ];
 
-  // Membership Tiers
-  const membershipTiers = [
+  const seasonalDeals: Deal[] = [
     {
-      level: 'Member',
-      icon: '🥉',
-      color: 'from-gray-400 to-gray-600',
-      benefits: ['Điểm tích lũy 1%', 'Ưu đãi thường xuyên', 'Thông tin tour mới'],
-      points: '0-999',
-    },
-    {
-      level: 'Silver',
-      icon: '🥈',
-      color: 'from-gray-300 to-gray-500',
-      benefits: ['Điểm tích lũy 2%', 'Giảm 5% mọi tour', 'Ưu tiên đặt chỗ', 'Tặng bảo hiểm'],
-      points: '1000-4999',
-    },
-    {
-      level: 'Gold',
-      icon: '🥇',
-      color: 'from-yellow-400 to-yellow-600',
-      benefits: ['Điểm tích lũy 3%', 'Giảm 10% mọi tour', 'VIP lounge', 'Tặng combo', 'Tư vấn 24/7'],
-      points: '5000-19999',
-    },
-    {
-      level: 'Diamond',
-      icon: '💎',
-      color: 'from-purple-400 to-pink-600',
-      benefits: ['Điểm tích lũy 5%', 'Giảm 15% mọi tour', 'VIP service', 'Private tour', 'Hỗ trợ đặc biệt'],
-      points: '20000+',
-    },
-  ];
-
-  // Seasonal Promotions
-  const seasonalDeals = [
-    {
-      season: 'Hè sôi động',
-      image: '☀️',
-      imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop',
+      id: 1,
       title: 'Combo biển đảo mùa hè',
-      description: 'Giảm 25% tất cả tour biển',
+      originalPrice: 5000000,
+      salePrice: 3750000,
       discount: 25,
+      imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop',
+      destination: 'Nhiều điểm đến',
       validUntil: '31/08/2025',
     },
     {
-      season: 'Giáng sinh - Năm mới',
-      image: '🎄',
-      imageUrl: '/uploads/destinations/Tour năm mới đặc biệt.jpg',
+      id: 2,
       title: 'Tour năm mới đặc biệt',
-      description: 'Ưu đãi đặc biệt cho dịp lễ',
+      originalPrice: 6000000,
+      salePrice: 4800000,
       discount: 20,
+      imageUrl: '/uploads/destinations/Tour năm mới đặc biệt.jpg',
+      destination: 'Nhiều điểm đến',
       validUntil: '31/12/2024',
     },
-    {
-      season: 'Valentine - 8/3 - 20/10',
-      image: '💝',
-      imageUrl: '/uploads/destinations/Tour lãng mạn cho đôi.jpg',
-      title: 'Tour lãng mạn cho đôi',
-      description: 'Combo dành cho cặp đôi',
-      discount: 30,
-      validUntil: '28/02/2025',
-    },
-    {
-      season: 'Thu săn mây',
-      image: '🍂',
-      imageUrl: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop',
-      title: 'Săn mây Tây Bắc',
-      description: 'Giảm 15% tour săn mây',
-      discount: 15,
-      validUntil: '30/10/2025',
-    },
   ];
 
-  // Special Offers
   const specialOffers = [
     {
-      title: 'Sinh viên',
-      icon: AcademicCapIcon,
-      description: 'Giảm 15% khi có thẻ sinh viên',
-      code: 'STUDENT15',
+      title: 'Ưu đãi độc quyền cho thành viên',
+      description: 'Thành viên Gold trở lên được giảm thêm 10% trên mọi tour',
+      code: 'MEMBER10',
+      color: 'from-amber-500 to-orange-500',
     },
     {
-      title: 'Gia đình',
-      icon: UserGroupIcon,
-      description: 'Giảm thêm 5% khi đi từ 4 người',
-      code: 'FAMILY5',
+      title: 'Đặt sớm – Giảm thêm 10%',
+      description: 'Đặt tour trước 30 ngày nhận thêm ưu đãi 10%',
+      code: 'EARLY10',
+      color: 'from-blue-500 to-cyan-500',
     },
     {
-      title: 'Doanh nghiệp',
-      icon: BuildingOfficeIcon,
-      description: 'Ưu đãi đặc biệt cho đoàn công ty',
-      code: 'CORP10',
-    },
-    {
-      title: 'Ngân hàng',
-      icon: CreditCardIcon,
-      description: 'Giảm thêm khi thanh toán qua BIDV, Techcombank',
-      code: 'BANK20',
+      title: 'Giảm thêm 5% khi đi nhóm từ 4 người',
+      description: 'Áp dụng cho tất cả tour khi đặt từ 4 người trở lên',
+      code: 'GROUP5',
+      color: 'from-purple-500 to-pink-500',
     },
   ];
 
+  const personalizedDeals: Deal[] = [
+    {
+      id: 1,
+      title: 'Đà Nẵng - Hội An 3N2Đ',
+      originalPrice: 4000000,
+      salePrice: 2400000,
+      discount: 40,
+      imageUrl: '/uploads/destinations/Hội An - Đà Nẵng.jpg',
+      destination: 'Đà Nẵng, Hội An',
+      validUntil: '25/11/2025',
+      duration: '3 ngày 2 đêm',
+      reason: 'Dựa trên lịch sử tìm kiếm của bạn',
+    },
+  ];
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setTimeout(() => setSubscribed(false), 3000);
+      setEmail('');
+    }
+  };
+
+  const filteredDeals = (deals: Deal[]) => {
+    return deals.filter((deal) => {
+      if (discountFilter !== 'all' && deal.discount < discountFilter) return false;
+      if (destinationFilter !== 'all' && deal.destination && !deal.destination.toLowerCase().includes(destinationFilter.toLowerCase())) return false;
+      return true;
+    });
+  };
+
+  const activeFiltersCount = [discountFilter !== 'all', productFilter !== 'all', timeFilter !== 'all', destinationFilter !== 'all'].filter(Boolean).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-6 py-2.5 mb-6">
-              <FireIconSolid className="h-6 w-6 text-yellow-300" />
-              <span className="font-semibold">Ưu đãi đặc biệt</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Compact Hero Section */}
+      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white overflow-hidden">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundSize: '40px 40px',
+          }} />
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left Content */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+                <span className="text-sm font-medium">Ưu đãi đặc biệt hôm nay</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                Khuyến mãi & Ưu đãi
+              </h1>
+              <p className="text-lg text-blue-100 mb-6 max-w-xl">
+                Tiết kiệm đến 50% cho hành trình mơ ước của bạn
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+                <Link
+                  to="/destinations"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl"
+                >
+                  Khám phá ngay
+                </Link>
+                <button
+                  onClick={() => setShowFilters(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/20 transition-all border border-white/20"
+                >
+                  Bộ lọc
+                </button>
+              </div>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4">
-              Khuyến mãi & Ưu đãi
-            </h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto">
-              Tiết kiệm đến 50% với các chương trình khuyến mãi độc quyền
-            </p>
+
+            {/* Flash Sale Countdown - Compact */}
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-sm font-semibold">Flash Sale kết thúc sau</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <TimeUnit value={timeLeft.hours} label="Giờ" />
+                <span className="text-2xl font-bold">:</span>
+                <TimeUnit value={timeLeft.minutes} label="Phút" />
+                <span className="text-2xl font-bold">:</span>
+                <TimeUnit value={timeLeft.seconds} label="Giây" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-4 mb-8 border-b border-gray-200">
-          {[
-            { id: 'today', label: 'Ưu đãi hôm nay', icon: FireIcon },
-            { id: 'combo', label: 'Combo hấp dẫn', icon: GiftIcon },
-            { id: 'member', label: 'Chương trình thành viên', icon: StarIcon },
-            { id: 'season', label: 'Khuyến mãi theo mùa', icon: SparklesIcon },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Modern Tab Navigation */}
+        <div className="mb-8">
+          <div className="bg-white rounded-2xl shadow-sm p-2 inline-flex gap-2 overflow-x-auto">
+            {[
+              { id: 'today' as TabType, label: 'Hôm nay' },
+              { id: 'combo' as TabType, label: 'Combo' },
+              { id: 'member' as TabType, label: 'Thành viên' },
+              { id: 'season' as TabType, label: 'Theo mùa' },
+              { id: 'flight-hotel' as TabType, label: 'Vé & KS' },
+            ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-6 py-3 font-semibold border-b-2 transition-colors ${
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                    : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Icon className="h-5 w-5" />
                 {tab.label}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        {/* Flash Sale Tab */}
+        {/* Quick Filter Bar */}
+        <div className="mb-8 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowFilters(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors"
+          >
+            <span className="font-medium">Bộ lọc</span>
+            {activeFiltersCount > 0 && (
+              <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+
+          {/* Active Filters */}
+          {discountFilter !== 'all' && (
+            <FilterTag
+              label={`Giảm ≥${discountFilter}%`}
+              onRemove={() => setDiscountFilter('all')}
+            />
+          )}
+          {destinationFilter !== 'all' && (
+            <FilterTag
+              label={destinationFilter}
+              onRemove={() => setDestinationFilter('all')}
+            />
+          )}
+          {productFilter !== 'all' && (
+            <FilterTag
+              label={productFilter}
+              onRemove={() => setProductFilter('all')}
+            />
+          )}
+          {timeFilter !== 'all' && (
+            <FilterTag
+              label={timeFilter}
+              onRemove={() => setTimeFilter('all')}
+            />
+          )}
+        </div>
+
+        {/* Personalized Section */}
+        {personalizedDeals.length > 0 && (
+          <section className="mb-12">
+            <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-blue-50 rounded-2xl p-6 mb-6 border border-purple-100">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-lg">★</span>
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    Dành riêng cho bạn
+                  </h2>
+                  <p className="text-gray-600">
+                    {personalizedDeals[0].reason} - Giảm đến {personalizedDeals[0].discount}%
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {personalizedDeals.map((deal) => (
+                <EnhancedDealCard key={deal.id} deal={deal} featured />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Main Content */}
         {activeTab === 'today' && (
           <div className="space-y-8">
-            {/* Countdown Banner */}
-            <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl p-6 text-white">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-                    <FireIconSolid className="h-6 w-6" />
-                    Flash Sale
-                  </h2>
-                  <p className="text-white/90">Chỉ còn hôm nay!</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</div>
-                    <div className="text-sm">Giờ</div>
-                  </div>
-                  <div className="text-2xl">:</div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</div>
-                    <div className="text-sm">Phút</div>
-                  </div>
-                  <div className="text-2xl">:</div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</div>
-                    <div className="text-sm">Giây</div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Flash Sale hôm nay</h2>
+              <span className="text-sm text-gray-500">{filteredDeals(flashSales).length} ưu đãi</span>
             </div>
-
-            {/* Discount Chips */}
-            <div className="mb-6 flex flex-wrap gap-2">
-              {[
-                { label: 'Tất cả', value: 'all' as const },
-                { label: '≥ 10%', value: 10 as const },
-                { label: '≥ 20%', value: 20 as const },
-                { label: '≥ 25%', value: 25 as const },
-                { label: '≥ 30%', value: 30 as const },
-              ].map((chip) => (
-                <button
-                  key={String(chip.value)}
-                  onClick={() => setDiscountFilter(chip.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    discountFilter === chip.value
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  {chip.label}
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredDeals(flashSales).map((deal) => (
+                <EnhancedDealCard key={deal.id} deal={deal} />
               ))}
             </div>
-
-            {/* Flash Sale Items */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {flashSales
-                .filter((x) =>
-                  discountFilter === 'all' ? true : x.discount >= discountFilter
-                )
-                .map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl transition-all transform hover:-translate-y-1"
-                >
-                  <div className="h-48 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-6xl">{item.image}</div>
-                    )}
-                    <div className="absolute top-3 right-3 bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-semibold border border-rose-200">-{item.discount}%</div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-bold text-xl text-gray-900 mb-2">{item.title}</h3>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="text-sm text-gray-500 line-through">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.originalPrice)}
-                      </span>
-                      <span className="text-2xl font-bold text-blue-700">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.salePrice)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                      <ClockIcon className="h-4 w-4" />
-                      <span>Còn {item.timeLeft}</span>
-                    </div>
-                    <Link
-                      to="/destinations"
-                      className="block w-full text-center px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-black transition-colors font-semibold"
-                    >
-                      Đặt ngay
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Vouchers */}
-            <section>
-              <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-                <TicketIcon className="h-8 w-8 text-purple-500" />
-                Voucher giảm giá
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {vouchers.map((v) => (
-                  <div key={v.id} className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
-                    <div className="h-32 relative overflow-hidden">
-                      {v.imageUrl ? (
-                        <img src={v.imageUrl} alt={v.title} className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full bg-gray-100" />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-white/90 text-gray-900 text-xs font-semibold">
-                        {v.title || 'Ưu đãi'}
-                      </div>
-                      <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
-                        -{v.discount}%
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="text-xs text-gray-500 mb-1">Mã giảm giá</div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="font-mono text-lg font-bold tracking-wider">{v.code}</div>
-                        <button onClick={() => copyCode(v.code)} className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-gray-50">
-                          {copiedCode === v.code ? 'Đã copy' : 'Copy'}
-                        </button>
-                      </div>
-                      <div className="text-sm text-gray-600 mb-4">
-                        Đơn tối thiểu {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrder)}
-                      </div>
-                      <Link
-                        to={`/destinations?q=${encodeURIComponent(v.code)}`}
-                        className="block w-full text-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black font-semibold"
-                      >
-                        Áp dụng ngay
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
           </div>
         )}
 
-        {/* Combos Tab */}
         {activeTab === 'combo' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {combos
-              .filter((c) =>
-                discountFilter === 'all'
-                  ? true
-                  : Math.round(((c.originalPrice - c.salePrice) / c.originalPrice) * 100) >=
-                    (discountFilter as number)
-              )
-              .map((combo) => (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Combo hấp dẫn</h2>
+              <span className="text-sm text-gray-500">{filteredDeals(combos).length} combo</span>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredDeals(combos).map((deal) => (
+                <EnhancedDealCard key={deal.id} deal={deal} showIncludes />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'member' && (
+          <div className="space-y-8">
+            {/* TravelPoints Section - Redesigned */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 border border-amber-100">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">★</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">TravelPoints</h2>
+                  <p className="text-gray-600">
+                    Tích điểm mỗi lần đặt tour và đổi thành ưu đãi hấp dẫn
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <PointCard
+                  points="1 điểm"
+                  value="1,000 VNĐ"
+                  color="from-blue-500 to-cyan-500"
+                />
+                <PointCard
+                  points="100 điểm"
+                  value="Voucher 5%"
+                  color="from-purple-500 to-pink-500"
+                />
+                <PointCard
+                  points="500 điểm"
+                  value="Voucher 15%"
+                  color="from-orange-500 to-red-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'season' && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Khuyến mãi theo mùa</h2>
+              <span className="text-sm text-gray-500">{filteredDeals(seasonalDeals).length} ưu đãi</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredDeals(seasonalDeals).map((deal) => (
+                <EnhancedDealCard key={deal.id} deal={deal} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'flight-hotel' && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-gray-400 text-2xl">●</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Đang phát triển</h3>
+            <p className="text-gray-600 mb-6">Tính năng này sẽ sớm có mặt</p>
+            <Link
+              to="/destinations"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
+            >
+              Xem các tour hiện có
+            </Link>
+          </div>
+        )}
+
+        {/* Special Offers - Redesigned */}
+        <section className="mt-16 mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Ưu đãi đặc biệt</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {specialOffers.map((offer, index) => (
               <div
-                key={combo.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1"
+                key={index}
+                className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-transparent hover:shadow-xl transition-all"
               >
-                <div className="h-48 bg-gray-50 relative overflow-hidden border-b border-gray-100">
-                  {combo.imageUrl ? (
-                    <img src={combo.imageUrl} alt={combo.title} className="w-full h-full object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl">{combo.image}</div>
-                  )}
+                <div className={`w-12 h-12 bg-gradient-to-br ${offer.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-white`}>
+                  <span className="font-bold text-lg">★</span>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-xl text-gray-900 mb-2">{combo.title}</h3>
-                  <p className="text-gray-600 mb-4">{combo.description}</p>
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-sm text-gray-500 line-through">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(combo.originalPrice)}
-                    </span>
-                    <span className="text-2xl font-bold text-blue-600">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(combo.salePrice)}
-                    </span>
+                <h3 className="font-bold text-lg text-gray-900 mb-2">{offer.title}</h3>
+                <p className="text-gray-600 text-sm mb-4">{offer.description}</p>
+                <div className="flex items-center justify-between">
+                  <div className="bg-gray-100 text-gray-700 text-sm font-mono font-semibold px-3 py-1.5 rounded-lg">
+                    {offer.code}
                   </div>
-                  <div className="bg-green-50 text-green-700 text-sm font-semibold px-3 py-2 rounded-lg mb-4">
-                    Tiết kiệm {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(combo.savings)}
-                  </div>
-                  <ul className="space-y-2 mb-6">
-                    {combo.includes.map((item, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                        <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    to="/destinations"
-                    className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                  >
-                    Xem chi tiết
-                  </Link>
+                  <button className="text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                    Sao chép
+                  </button>
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Social Proof - Compact */}
+        <section className="mb-12">
+          <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-1">4.8/5</div>
+                <div className="text-sm text-gray-500">Đánh giá trung bình</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-1">2,300+</div>
+                <div className="text-sm text-gray-500">Khách hàng hài lòng</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-1">100%</div>
+                <div className="text-sm text-gray-500">Hoàn tiền nếu huỷ</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-1">24/7</div>
+                <div className="text-sm text-gray-500">Hỗ trợ khách hàng</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Newsletter - Redesigned */}
+        <section className="mb-12">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 lg:p-12 text-white relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+                backgroundSize: '30px 30px',
+              }} />
+            </div>
+            <div className="relative max-w-2xl mx-auto text-center">
+              <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl">★</span>
+              </div>
+              <h2 className="text-2xl lg:text-3xl font-bold mb-3">
+                Nhận ưu đãi độc quyền
+              </h2>
+              <p className="text-blue-100 mb-6">
+                Đăng ký nhận thông báo về các chương trình khuyến mãi mới nhất
+              </p>
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email của bạn"
+                  required
+                  className="flex-1 px-4 py-3 rounded-xl text-gray-900 border-0 focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors whitespace-nowrap"
+                >
+                  {subscribed ? '✓ Đã đăng ký' : 'Đăng ký'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Filter Sidebar */}
+      <FilterSidebar
+        show={showFilters}
+        onClose={() => setShowFilters(false)}
+        discountFilter={discountFilter}
+        setDiscountFilter={setDiscountFilter}
+        productFilter={productFilter}
+        setProductFilter={setProductFilter}
+        timeFilter={timeFilter}
+        setTimeFilter={setTimeFilter}
+        destinationFilter={destinationFilter}
+        setDestinationFilter={setDestinationFilter}
+      />
+    </div>
+  );
+}
+
+// Enhanced Components
+
+function TimeUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-3xl font-bold tabular-nums">
+        {String(value).padStart(2, '0')}
+      </div>
+      <div className="text-xs text-white/70 mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function FilterTag({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+      <span className="capitalize">{label}</span>
+      <button
+        onClick={onRemove}
+        className="hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+      >
+        <span className="text-blue-700 font-bold">×</span>
+      </button>
+    </div>
+  );
+}
+
+function PointCard({ points, value, color }: { points: string; value: string; color: string }) {
+  return (
+    <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-lg transition-shadow">
+      <div className={`w-10 h-10 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center mb-3`}>
+        <span className="text-white font-bold">★</span>
+      </div>
+      <div className="text-xl font-bold text-gray-900 mb-1">{points}</div>
+      <div className="text-sm text-gray-600">= {value}</div>
+    </div>
+  );
+}
+
+function EnhancedDealCard({ 
+  deal, 
+  showIncludes = false,
+  featured = false 
+}: { 
+  deal: Deal; 
+  showIncludes?: boolean;
+  featured?: boolean;
+}) {
+  const finalImageUrl = deal.imageUrl?.startsWith('http') 
+    ? deal.imageUrl 
+    : `${window.location.origin}${deal.imageUrl}`;
+
+  const tagConfig = {
+    hot: { label: 'Hot', color: 'bg-red-500' },
+    new: { label: 'Mới', color: 'bg-green-500' },
+    limited: { label: 'Giới hạn', color: 'bg-orange-500' },
+  };
+
+  return (
+    <div className={`group bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl hover:border-transparent transition-all ${featured ? 'ring-2 ring-purple-500' : ''}`}>
+      <div className="relative h-48 bg-gray-100 overflow-hidden">
+        {deal.imageUrl ? (
+          <img
+            src={finalImageUrl}
+            alt={deal.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
+        )}
+        
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        
+        {/* Discount Badge */}
+        <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg">
+          -{deal.discount}%
+        </div>
+
+        {/* Tag Badge */}
+        {deal.tag && (
+          <div className={`absolute top-3 left-3 ${tagConfig[deal.tag].color} text-white px-3 py-1 rounded-lg text-xs font-bold shadow-lg`}>
+            {tagConfig[deal.tag].label}
+          </div>
+        )}
+
+        {/* Rating */}
+        {deal.rating && (
+          <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+            <span className="text-yellow-400 font-bold">★</span>
+            <span className="text-sm font-semibold text-gray-900">{deal.rating}</span>
+            <span className="text-xs text-gray-500">({deal.reviewCount})</span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-5">
+        {/* Title */}
+        <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+          {deal.title}
+        </h3>
+
+        {/* Destination & Duration */}
+        <div className="space-y-1.5 mb-4">
+          {deal.destination && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="text-gray-400">📍</span>
+              <span>{deal.destination}</span>
+            </div>
+          )}
+          {deal.duration && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="text-gray-400">⏱</span>
+              <span>{deal.duration}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Includes */}
+        {showIncludes && deal.includes && (
+          <div className="mb-4 space-y-1.5">
+            {deal.includes.slice(0, 3).map((item, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 flex-shrink-0" />
+                <span>{item}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Membership Tab */}
-        {activeTab === 'member' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {membershipTiers.map((tier) => (
-                <div
-                  key={tier.level}
-                  className={`bg-gradient-to-br ${tier.color} rounded-xl p-6 text-white relative overflow-hidden`}
-                >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
-                  <div className="relative z-10">
-                    <div className="text-5xl mb-3">{tier.icon}</div>
-                    <h3 className="text-2xl font-bold mb-2">{tier.level}</h3>
-                    <div className="text-sm text-white/80 mb-4">{tier.points} điểm</div>
-                    <ul className="space-y-2">
-                      {tier.benefits.map((benefit, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <CheckCircleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Price */}
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm text-gray-400 line-through">
+            {new Intl.NumberFormat('vi-VN').format(deal.originalPrice)}đ
+          </span>
+          <span className="text-2xl font-bold text-blue-600">
+            {new Intl.NumberFormat('vi-VN').format(deal.salePrice)}đ
+          </span>
+        </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold mb-4">TravelPoints - Điểm thưởng</h3>
-              <p className="text-gray-700 mb-6">
-                Mỗi khi đặt tour, bạn sẽ nhận được TravelPoints. Điểm này có thể quy đổi thành voucher giảm giá hoặc sử dụng trực tiếp để thanh toán.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-2xl font-bold text-blue-600 mb-2">1 điểm</div>
-                  <div className="text-sm text-gray-600">= 1,000 VNĐ</div>
-                </div>
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-2xl font-bold text-purple-600 mb-2">100 điểm</div>
-                  <div className="text-sm text-gray-600">= 1 voucher 5%</div>
-                </div>
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-2xl font-bold text-pink-600 mb-2">500 điểm</div>
-                  <div className="text-sm text-gray-600">= 1 voucher 15%</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Valid Until */}
+        <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+          <span>📅</span>
+          <span>Áp dụng đến {deal.validUntil}</span>
+        </div>
 
-        {/* Seasonal Tab */}
-        {activeTab === 'season' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {seasonalDeals.map((deal) => (
-                <div
-                  key={deal.season}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1"
-                >
-                  <div className="h-48 bg-gray-50 relative overflow-hidden border-b border-gray-100">
-                    {deal.imageUrl ? (
-                      <img src={deal.imageUrl} alt={deal.title} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-6xl">{deal.image}</div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full mb-3">
-                      {deal.season}
-                    </div>
-                    <h3 className="font-bold text-xl text-gray-900 mb-2">{deal.title}</h3>
-                    <p className="text-gray-600 mb-4">{deal.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-2xl font-bold text-blue-700">-{deal.discount}%</div>
-                        <div className="text-xs text-gray-500">Hết hạn: {deal.validUntil}</div>
-                      </div>
-                      <Link
-                        to="/destinations"
-                        className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black transition-colors font-semibold"
-                      >
-                        Xem ngay
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Special Offers */}
-            <section>
-              <h2 className="text-3xl font-bold mb-6">Ưu đãi đặc biệt</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {specialOffers.map((offer) => {
-                  const Icon = offer.icon;
-                  return (
-                    <div
-                      key={offer.title}
-                      className="bg-white rounded-xl shadow-lg p-6 border-2 border-transparent hover:border-blue-300 transition-all"
-                    >
-                      <Icon className="h-12 w-12 text-blue-600 mb-4" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">{offer.title}</h3>
-                      <p className="text-gray-600 text-sm mb-4">{offer.description}</p>
-                      <div className="bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-lg inline-block">
-                        {offer.code}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
-        )}
+        {/* CTA Button */}
+        <Link
+          to={`/checkout?type=combo&amount=${deal.salePrice}&title=${encodeURIComponent(deal.title)}&includes=${deal.includes ? encodeURIComponent(JSON.stringify(deal.includes)) : ''}`}
+          className="block w-full text-center px-4 py-3 bg-gray-900 text-white rounded-xl hover:bg-blue-600 transition-colors font-semibold group-hover:shadow-lg"
+        >
+          Đặt ngay
+        </Link>
       </div>
     </div>
+  );
+}
+
+function FilterSidebar({
+  show,
+  onClose,
+  discountFilter,
+  setDiscountFilter,
+  productFilter,
+  setProductFilter,
+  timeFilter,
+  setTimeFilter,
+  destinationFilter,
+  setDestinationFilter,
+}: {
+  show: boolean;
+  onClose: () => void;
+  discountFilter: DiscountFilter;
+  setDiscountFilter: (filter: DiscountFilter) => void;
+  productFilter: ProductType;
+  setProductFilter: (filter: ProductType) => void;
+  timeFilter: TimeFilter;
+  setTimeFilter: (filter: TimeFilter) => void;
+  destinationFilter: string;
+  setDestinationFilter: (filter: string) => void;
+}) {
+  if (!show) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Sidebar */}
+      <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white z-50 shadow-2xl overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Bộ lọc</h2>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+          >
+            <span className="text-gray-600 font-bold text-xl">×</span>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Discount Filter */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="font-semibold text-gray-900">Mức giảm giá</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Tất cả', value: 'all' as DiscountFilter },
+                { label: '≥ 10%', value: 10 as DiscountFilter },
+                { label: '≥ 20%', value: 20 as DiscountFilter },
+                { label: '≥ 30%', value: 30 as DiscountFilter },
+                { label: '≥ 50%', value: 50 as DiscountFilter },
+              ].map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setDiscountFilter(filter.value)}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                    discountFilter === filter.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Product Type */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="font-semibold text-gray-900">Loại sản phẩm</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Tất cả', value: 'all' as ProductType },
+                { label: 'Tour', value: 'tour' as ProductType },
+                { label: 'Combo', value: 'combo' as ProductType },
+                { label: 'Khách sạn', value: 'hotel' as ProductType },
+                { label: 'Vé máy bay', value: 'flight' as ProductType },
+              ].map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setProductFilter(filter.value)}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                    productFilter === filter.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Destination */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="font-semibold text-gray-900">Điểm đến</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Tất cả', value: 'all' },
+                { label: 'Đà Lạt', value: 'đà lạt' },
+                { label: 'Phú Quốc', value: 'phú quốc' },
+                { label: 'Bangkok', value: 'bangkok' },
+                { label: 'Tokyo', value: 'tokyo' },
+                { label: 'Nha Trang', value: 'nha trang' },
+              ].map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setDestinationFilter(filter.value)}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                    destinationFilter === filter.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Time Filter */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="font-semibold text-gray-900">Thời gian</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Tất cả', value: 'all' as TimeFilter },
+                { label: 'Hôm nay', value: 'today' as TimeFilter },
+                { label: 'Cuối tuần', value: 'weekend' as TimeFilter },
+                { label: 'Dịp lễ', value: 'holiday' as TimeFilter },
+              ].map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setTimeFilter(filter.value)}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                    timeFilter === filter.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3">
+          <button
+            onClick={() => {
+              setDiscountFilter('all');
+              setProductFilter('all');
+              setTimeFilter('all');
+              setDestinationFilter('all');
+            }}
+            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Đặt lại
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Áp dụng
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

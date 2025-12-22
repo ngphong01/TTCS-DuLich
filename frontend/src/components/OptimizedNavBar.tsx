@@ -53,7 +53,7 @@ export default function OptimizedNavBar() {
       });
       const json = await res.json();
       if (json?.success && json?.url) {
-        const base = (process.env.REACT_APP_BACKEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+        const base = (process.env.REACT_APP_BACKEND_URL || window.location.origin).replace(/\/$/, '');
         const url = json.url.startsWith('http') ? json.url : `${base}${json.url}`;
         setAvatarUrl(url);
         window.dispatchEvent(new Event('avatar-updated'));
@@ -232,7 +232,7 @@ export default function OptimizedNavBar() {
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <span className="text-xl font-bold bg-gradient-to-r from-cyan-500 via-teal-500 to-sky-500 bg-clip-text text-transparent">
             TravelGo
           </span>
         </Link>

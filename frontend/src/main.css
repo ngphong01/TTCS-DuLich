@@ -13,9 +13,9 @@ html, body {
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --accent: #3b82f6; /* blue-500 */
-  --accent-2: #8b5cf6; /* purple-500 */
-  --accent-3: #ec4899; /* pink-500 */
+  --accent: #06b6d4; /* cyan-500 - turquoise/biển */
+  --accent-2: #14b8a6; /* teal-500 - xanh lá/biển */
+  --accent-3: #0ea5e9; /* sky-500 - xanh trời */
   --tg-primary: #0ea5e9;
 }
 
@@ -138,6 +138,48 @@ a:hover {
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Hero Section Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out both;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
 }
 
 /* Grid pattern for background */

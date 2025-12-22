@@ -1,0 +1,52 @@
+{
+  "home": "Home",
+  "destinations": "Destinations",
+  "tours": "Tours",
+  "hotels": "Hotels",
+  "restaurants": "Restaurants",
+  "blog": "Blog",
+  "contact": "Contact",
+  "about": "About Us",
+  "signIn": "Sign In",
+  "signUp": "Sign Up",
+  "account": "Account",
+  "logout": "Logout",
+  "admin": "Admin",
+  "explore": "Explore",
+  "services": "Services",
+  "promotions": "Promotions",
+  "support": "Support",
+  "bookings": "Bookings",
+  "tagline": "Explore the World",
+  "exploreSubmenu": {
+    "stories": "Inspiration",
+    "storiesDesc": "Real travel stories",
+    "storiesSubDesc": "Find inspiration from experiences",
+    "featured": "Trending",
+    "featuredDesc": "Hottest this week",
+    "featuredSubDesc": "Destinations trending now",
+    "categories": "By Interest",
+    "categoriesDesc": "Explore by theme",
+    "categoriesSubDesc": "Beach, city, nature...",
+    "destinations": "All Destinations",
+    "destinationsDesc": "View all & compare",
+    "destinationsSubDesc": "200+ destinations waiting"
+  },
+  "servicesSubmenu": {
+    "hotels": "Hotels",
+    "hotelsDesc": "Find suitable hotels",
+    "restaurants": "Restaurants",
+    "restaurantsDesc": "Discover cuisine"
+  },
+  "supportSubmenu": {
+    "about": "About",
+    "aboutDesc": "About TravelGo",
+    "contact": "Contact",
+    "contactDesc": "Customer support"
+  },
+  "userMenu": {
+    "user": "User",
+    "admin": "Administrator"
+  }
+}
+
