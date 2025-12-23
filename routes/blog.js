@@ -268,15 +268,36 @@ router.put('/admin/:id', authRequired, isAdmin, async (req, res) => {
 router.delete('/admin/:id', authRequired, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const blogId = parseInt(id);
 
-    await prisma.blog.delete({
-      where: { id: parseInt(id) },
+    if (isNaN(blogId)) {
+      return res.status(400).json({ message: 'ID không hợp lệ' });
+    }
+
+    // Check if blog exists
+    const blog = await prisma.blog.findUnique({
+      where: { id: blogId },
     });
 
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog không tồn tại' });
+    }
+
+    await prisma.blog.delete({
+      where: { id: blogId },
+    });
+
+    console.log('✅ Blog deleted successfully:', { id: blogId });
     res.json({ message: 'Xóa blog thành công' });
   } catch (error) {
-    console.error('Error deleting blog:', error);
-    res.status(500).json({ message: 'Lỗi xóa blog' });
+    console.error('❌ Error deleting blog:', error);
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Không thể xóa blog này vì có dữ liệu liên quan' 
+      });
+    } else {
+      res.status(500).json({ message: 'Lỗi xóa blog', error: error.message });
+    }
   }
 });
 

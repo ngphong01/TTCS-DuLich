@@ -5,41 +5,178 @@ const slugify = require('slugify');
 const cacheResponse = require('../middleware/cache');
 const { invalidatePattern } = require('../lib/redis');
 
+// Helper: Normalize Vietnamese text (remove diacritics)
+const normalizeVietnamese = (str) => {
+  if (!str) return '';
+  return str
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
+
 // GET /api/tour - list with filters & pagination
-router.get(
-  '/',
-  cacheResponse({
-    keyPrefix: 'tours:list',
-    keyBuilder: (req) => `tours:list:${req.query.lang || 'en'}:${JSON.stringify(req.query)}`,
-    ttl: Number(process.env.CACHE_TTL_SECONDS || 300),
-  }),
-  async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const page = parseInt(req.query.page || '1', 10);
-    const limit = parseInt(req.query.limit || '12', 10);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 12));
     const skip = (page - 1) * limit;
-    const { q, destinationId, minPrice, maxPrice, tag, lang } = req.query;
-    
-    // 🔥 CRITICAL: Log lang parameter để debug
-    if (lang) {
-      console.log(`🌐 Tour API - Language requested: ${lang}`);
+
+    // Parse query params
+    let q = req.query.q;
+    const destinationId = req.query.destinationId;
+    const minPrice = req.query.minPrice;
+    const maxPrice = req.query.maxPrice;
+    const tag = req.query.tag;
+    const transport = req.query.transport;
+    const departurePoint = req.query.departurePoint;
+
+    // Clean search query
+    if (q && typeof q === 'string') {
+      q = decodeURIComponent(q.replace(/\+/g, ' ')).trim();
+      if (q.length === 0) q = null;
+    } else {
+      q = null;
     }
 
-    const where = {};
-    if (q) {
-      where.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-      ];
-    }
-    if (destinationId) where.destinationId = Number(destinationId);
+    console.log('\n========== TOUR API ==========');
+    console.log('Query:', { q, destinationId, minPrice, maxPrice, tag, transport, departurePoint });
+    console.log('Pagination:', { page, limit, skip });
+
+    // Build where conditions
+    const whereConditions = [];
+
+    // Price filter
     if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = Number(minPrice);
-      if (maxPrice) where.price.lte = Number(maxPrice);
+      const priceCondition = {};
+      if (minPrice) {
+        const min = parseFloat(minPrice);
+        if (!isNaN(min)) priceCondition.gte = min;
+      }
+      if (maxPrice) {
+        const max = parseFloat(maxPrice);
+        if (!isNaN(max)) priceCondition.lte = max;
+      }
+      if (Object.keys(priceCondition).length > 0) {
+        whereConditions.push({ price: priceCondition });
+      }
     }
-    if (tag) where.tags = { array_contains: tag };
 
+    // Destination filter
+    if (destinationId) {
+      const destId = parseInt(destinationId);
+      if (!isNaN(destId)) {
+        whereConditions.push({ destinationId: destId });
+      }
+    }
+
+    // Tag filter
+    if (tag && typeof tag === 'string' && tag.trim()) {
+      whereConditions.push({
+        tags: { contains: tag.trim(), mode: 'insensitive' },
+      });
+    }
+
+    // Transport filter
+    if (transport && typeof transport === 'string' && transport.trim()) {
+      whereConditions.push({
+        transport: { contains: transport.trim(), mode: 'insensitive' },
+      });
+    }
+
+    // Departure point filter
+    if (departurePoint && typeof departurePoint === 'string' && departurePoint.trim()) {
+      const pointKeywords = {
+        hanoi: ['hà nội', 'hanoi'],
+        hochiminh: ['hồ chí minh', 'hcm', 'sài gòn', 'saigon'],
+        danang: ['đà nẵng', 'danang'],
+      };
+      const keywords = pointKeywords[departurePoint.toLowerCase()] || [departurePoint];
+      whereConditions.push({
+        OR: keywords.map((kw) => ({
+          departurePoint: { contains: kw, mode: 'insensitive' },
+        })),
+      });
+    }
+
+    // Build final where clause (without search - will filter later)
+    const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+    console.log('Where clause:', JSON.stringify(where, null, 2));
+
+    // If there's a search query, we need to filter manually for Vietnamese
+    if (q) {
+      console.log(`Searching for: "${q}"`);
+      const normalizedQuery = normalizeVietnamese(q);
+      console.log(`Normalized query: "${normalizedQuery}"`);
+
+      // Get all destinations to match by name
+      const destinations = await prisma.destination.findMany({
+        select: { id: true, name: true },
+      });
+
+      const matchingDestIds = destinations
+        .filter((d) => normalizeVietnamese(d.name).includes(normalizedQuery))
+        .map((d) => d.id);
+
+      console.log(`Matching destination IDs: [${matchingDestIds.join(', ')}]`);
+
+      // Get all tours (with other filters applied)
+      const allTours = await prisma.tour.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          image: true,
+          price: true,
+          originalPrice: true,
+          rating: true,
+          reviewCount: true,
+          destinationId: true,
+          shortDescription: true,
+          description: true,
+          duration: true,
+          tags: true,
+          transport: true,
+          destination: {
+            select: { id: true, name: true, slug: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      console.log(`Total tours before search filter: ${allTours.length}`);
+
+      // Filter by search query
+      const filteredTours = allTours.filter((tour) => {
+        const nameMatch = tour.name ? normalizeVietnamese(tour.name).includes(normalizedQuery) : false;
+        const shortDescMatch = tour.shortDescription ? normalizeVietnamese(tour.shortDescription).includes(normalizedQuery) : false;
+        const descMatch = tour.description ? normalizeVietnamese(tour.description).includes(normalizedQuery) : false;
+        const destMatch = tour.destinationId ? matchingDestIds.includes(tour.destinationId) : false;
+        const destNameMatch = tour.destination?.name ? normalizeVietnamese(tour.destination.name).includes(normalizedQuery) : false;
+
+        return nameMatch || shortDescMatch || descMatch || destMatch || destNameMatch;
+      });
+
+      console.log(`Filtered tours: ${filteredTours.length}`);
+
+      // Paginate
+      const total = filteredTours.length;
+      const paginatedTours = filteredTours.slice(skip, skip + limit);
+
+      console.log(`Returning ${paginatedTours.length} tours (page ${page}/${Math.ceil(total / limit)})`);
+
+      return res.json({
+        items: paginatedTours,
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+      });
+    }
+
+    // No search query - use Prisma directly
     const [items, total] = await Promise.all([
       prisma.tour.findMany({
         where,
@@ -47,80 +184,101 @@ router.get(
         skip,
         take: limit,
         select: {
-          id: true, name: true, slug: true, image: true, price: true, rating: true, reviewCount: true,
-          destinationId: true, shortDescription: true, duration: true, tags: true,
+          id: true,
+          name: true,
+          slug: true,
+          image: true,
+          price: true,
+          originalPrice: true,
+          rating: true,
+          reviewCount: true,
+          destinationId: true,
+          shortDescription: true,
+          duration: true,
+          tags: true,
+          transport: true,
+          destination: {
+            select: { id: true, name: true, slug: true },
+          },
         },
       }),
       prisma.tour.count({ where }),
     ]);
 
-    res.json({ items, total, page, pages: Math.ceil(total / limit) });
-  } catch (error) {
-    console.error('Error fetching tours:', error);
-    res.status(500).json({ message: 'Error fetching tours' });
-  }
-  }
-);
+    console.log(`Found ${total} tours (showing ${items.length})`);
 
-// GET /api/tour/:slug - detail
-router.get(
-  '/:slug',
-  cacheResponse({
-    keyPrefix: 'tours:slug',
-    keyBuilder: (req) => `tours:slug:${req.params.slug}:${req.query.lang || 'en'}`,
-    ttl: Number(process.env.CACHE_TTL_SECONDS || 600),
-  }),
-  async (req, res) => {
+    res.json({
+      items,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error('❌ Error in GET /api/tour:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({
+      message: 'Error fetching tours',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
+// GET /api/tour/by-id/:id
+router.get('/by-id/:id', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
-    
-    // 🔥 CRITICAL: Log lang parameter để debug
-    console.log(`🌐 Tour Detail API - Language requested: ${lang} for slug: ${req.params.slug}`);
-    
+    const tourId = parseInt(req.params.id);
+
+    if (isNaN(tourId)) {
+      return res.status(400).json({ message: 'Invalid tour ID' });
+    }
+
     const tour = await prisma.tour.findUnique({
-      where: { slug: req.params.slug },
-      select: {
-        id: true, name: true, slug: true, image: true, photos: true, price: true, originalPrice: true,
-        rating: true, reviewCount: true, description: true, shortDescription: true, duration: true,
-        tags: true, highlights: true, itinerary: true, map: true, faq: true, policies: true,
-        transport: true, destinationId: true, createdAt: true, updatedAt: true,
+      where: { id: tourId },
+      include: {
         destination: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            country: true,
-            image: true,
-          },
+          select: { id: true, name: true, slug: true, country: true, image: true },
         },
       },
     });
-    
+
     if (!tour) {
-      console.log(`❌ Tour not found with slug: ${req.params.slug}`);
       return res.status(404).json({ message: 'Tour not found' });
     }
-    
-    console.log(`✅ Tour found: ${tour.name} (ID: ${tour.id})`);
+
     res.json(tour);
   } catch (error) {
-    console.error('❌ Error fetching tour:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      meta: error.meta,
-      stack: error.stack,
-    });
-    res.status(500).json({ 
-      message: 'Error fetching tour',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('Error fetching tour by ID:', error);
+    res.status(500).json({ message: 'Error fetching tour' });
   }
-  }
-);
+});
 
-// Admin create/update (simple)
-router.post('/', async (req, res) => {
+// GET /api/tour/:slug
+router.get('/:slug', async (req, res) => {
+  try {
+    const tour = await prisma.tour.findUnique({
+      where: { slug: req.params.slug },
+      include: {
+        destination: {
+          select: { id: true, name: true, slug: true, country: true, image: true },
+        },
+      },
+    });
+
+    if (!tour) {
+      return res.status(404).json({ message: 'Tour not found' });
+    }
+
+    res.json(tour);
+  } catch (error) {
+    console.error('Error fetching tour:', error);
+    res.status(500).json({ message: 'Error fetching tour' });
+  }
+});
+
+// Admin routes
+const { authRequired, isAdmin } = require('../middleware/auth');
+
+router.post('/', authRequired, isAdmin, async (req, res) => {
   try {
     const data = req.body || {};
     const slug = data.slug || slugify(data.name || '', { lower: true, strict: true });
@@ -133,9 +291,9 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authRequired, isAdmin, async (req, res) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseInt(req.params.id);
     const updated = await prisma.tour.update({ where: { id }, data: req.body });
     await invalidatePattern('tours:*');
     res.json(updated);
@@ -145,39 +303,30 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authRequired, isAdmin, async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    
-    // Check if tour has bookings
+    const id = parseInt(req.params.id);
+
     const bookings = await prisma.bookingTour.findMany({
       where: { tourId: id },
       take: 1,
     });
-    
+
     if (bookings.length > 0) {
-      return res.status(400).json({ 
-        message: 'Không thể xóa tour này vì đã có đặt chỗ. Vui lòng xóa các đặt chỗ trước.' 
-      });
+      return res.status(400).json({ message: 'Không thể xóa tour đã có đặt chỗ' });
     }
-    
+
     await prisma.tour.delete({ where: { id } });
     await invalidatePattern('tours:*');
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting tour:', error);
-    if (error.code === 'P2003') {
-      res.status(400).json({ 
-        message: 'Không thể xóa tour này vì có dữ liệu liên quan (đặt chỗ, đánh giá, v.v.)' 
-      });
-    } else {
-      res.status(500).json({ message: 'Error deleting tour' });
-    }
+    res.status(500).json({ message: 'Error deleting tour' });
   }
 });
 
-// POST /api/tour/:tourId/review - Create tour review
-router.post('/:tourId/review', require('../middleware/rateLimit').reviewLimiter, async (req, res) => {
+// Review routes
+router.post('/:tourId/review', async (req, res) => {
   try {
     const tourId = parseInt(req.params.tourId);
     const { rating, comment } = req.body;
@@ -191,7 +340,7 @@ router.post('/:tourId/review', require('../middleware/rateLimit').reviewLimiter,
       return res.status(404).json({ message: 'Tour not found' });
     }
 
-    // Get userId from auth token
+    // Get userId from token
     let userId = null;
     const header = req.headers.authorization || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -201,8 +350,8 @@ router.post('/:tourId/review', require('../middleware/rateLimit').reviewLimiter,
         const jwt = require('jsonwebtoken');
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         userId = payload.id;
-      } catch (error) {
-        return res.status(401).json({ message: 'Invalid or expired token' });
+      } catch {
+        return res.status(401).json({ message: 'Invalid token' });
       }
     }
 
@@ -210,35 +359,8 @@ router.post('/:tourId/review', require('../middleware/rateLimit').reviewLimiter,
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // Verify user has completed booking for this tour
-    const user = await prisma.user.findUnique({ 
-      where: { id: userId },
-      select: { id: true, email: true, name: true, role: true }
-    });
-    if (user && !user.email.startsWith('guest-')) {
-      const hasCompletedBooking = await prisma.bookingTour.findFirst({
-        where: {
-          userId,
-          tourId,
-          status: 'COMPLETED',
-        },
-      });
-
-      if (!hasCompletedBooking) {
-        console.warn(`⚠️ User ${userId} reviewing tour ${tourId} without completed booking`);
-        // Optionally return error for strict verification:
-        // return res.status(403).json({ message: 'You must complete a booking before reviewing this tour' });
-      }
-    }
-
     const review = await prisma.tourReview.create({
-      data: {
-        tourId,
-        userId,
-        rating: Number(rating),
-        comment,
-        approved: false, // Requires admin approval
-      },
+      data: { tourId, userId, rating: Number(rating), comment, approved: false },
       include: { user: { select: { name: true, avatarUrl: true } } },
     });
 
@@ -254,62 +376,44 @@ router.post('/:tourId/review', require('../middleware/rateLimit').reviewLimiter,
 
     await prisma.tour.update({
       where: { id: tourId },
-      data: {
-        rating: avgRating,
-        reviewCount: allReviews.length,
-      },
+      data: { rating: avgRating, reviewCount: allReviews.length },
     });
 
-    await invalidatePattern(`tours:reviews:${tourId}`);
-    if (tour?.slug) {
-      await invalidatePattern(`tours:slug:${tour.slug}`);
-    }
-    await invalidatePattern('tours:list*');
-
+    await invalidatePattern('tours:*');
     res.status(201).json(review);
   } catch (error) {
-    console.error('Error creating tour review:', error);
-    res.status(500).json({ message: 'Error creating tour review' });
+    console.error('Error creating review:', error);
+    res.status(500).json({ message: 'Error creating review' });
   }
 });
 
-// GET /api/tour/:tourId/reviews - Get tour reviews
-router.get(
-  '/:tourId/reviews',
-  cacheResponse({
-    keyPrefix: 'tours:reviews',
-    keyBuilder: (req) => `tours:reviews:${req.params.tourId}`,
-    ttl: Number(process.env.CACHE_TTL_SECONDS || 300),
-  }),
-  async (req, res) => {
-    try {
-      const tourId = parseInt(req.params.tourId);
-      const reviews = await prisma.tourReview.findMany({
-        where: { tourId, approved: true },
-        include: { user: { select: { name: true, avatarUrl: true } } },
-        orderBy: { createdAt: 'desc' },
-      });
-      res.json(reviews);
-    } catch (error) {
-      console.error('Error fetching tour reviews:', error);
-      res.status(500).json({ message: 'Error fetching tour reviews' });
-    }
-  }
-);
-
-// PUT /api/tour/review/:id/approve - Approve/reject tour review (Admin only)
-router.put('/review/:id/approve', require('../middleware/auth').authRequired, require('../middleware/auth').isAdmin, async (req, res) => {
+router.get('/:tourId/reviews', async (req, res) => {
   try {
-    const { id } = req.params;
+    const tourId = parseInt(req.params.tourId);
+    const reviews = await prisma.tourReview.findMany({
+      where: { tourId, approved: true },
+      include: { user: { select: { name: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(reviews);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    res.status(500).json({ message: 'Error fetching reviews' });
+  }
+});
+
+router.put('/review/:id/approve', authRequired, isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
     const { approved } = req.body;
 
     const review = await prisma.tourReview.update({
-      where: { id: parseInt(id) },
+      where: { id },
       data: { approved: approved === true },
       include: { user: { select: { name: true } }, tour: { select: { name: true } } },
     });
 
-    // Recalculate tour rating after approval change
+    // Recalculate rating
     const allReviews = await prisma.tourReview.findMany({
       where: { tourId: review.tourId, approved: true },
       select: { rating: true },
@@ -321,22 +425,15 @@ router.put('/review/:id/approve', require('../middleware/auth').authRequired, re
 
     await prisma.tour.update({
       where: { id: review.tourId },
-      data: {
-        rating: avgRating,
-        reviewCount: allReviews.length,
-      },
+      data: { rating: avgRating, reviewCount: allReviews.length },
     });
 
-    await invalidatePattern(`tours:reviews:${review.tourId}`);
-    await invalidatePattern('tours:list*');
-
+    await invalidatePattern('tours:*');
     res.json(review);
   } catch (error) {
-    console.error('Error approving tour review:', error);
-    res.status(500).json({ message: 'Lỗi duyệt review' });
+    console.error('Error approving review:', error);
+    res.status(500).json({ message: 'Error approving review' });
   }
 });
 
 module.exports = router;
-
-

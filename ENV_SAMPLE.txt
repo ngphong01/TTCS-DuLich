@@ -51,5 +51,8 @@ TURNSTILE_SITE_KEY=your-cloudflare-turnstile-site-key
 TURNSTILE_SECRET_KEY=your-cloudflare-turnstile-secret-key
 
 # AI Configuration
+# IMPORTANT: Never hardcode API keys in source code. Always use environment variables.
+# For multiple API keys (rotation), use comma-separated values:
+# GEMINI_API_KEY=key1,key2,key3
 GEMINI_API_KEY=your-gemini-api-key-here
 ENABLE_AI_AUTOMATION=false

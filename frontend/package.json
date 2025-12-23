@@ -22,6 +22,7 @@
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^13.5.0",
     "react-router-dom": "^6.22.3",
+    "recharts": "^3.6.0",
     "test": "file:..",
     "zod": "^3.23.8"
   },

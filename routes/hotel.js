@@ -166,13 +166,32 @@ router.put('/:id', authRequired, isAdmin, async (req, res) => {
 router.delete('/:id', authRequired, isAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
+    
+    // Check if hotel has bookings
+    const bookings = await prisma.bookingHotel.findMany({
+      where: { hotelId: id },
+      take: 1,
+    });
+    
+    if (bookings.length > 0) {
+      return res.status(400).json({ 
+        message: 'Không thể xóa khách sạn này vì đã có đặt chỗ. Vui lòng xóa các đặt chỗ trước.' 
+      });
+    }
+    
     await prisma.hotel.delete({ where: { id } });
     
     console.log('✅ Hotel deleted successfully:', { id });
     res.status(204).send();
   } catch (error) {
     console.error('❌ Error deleting hotel:', error);
-    res.status(500).json({ message: 'Error deleting hotel' });
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Không thể xóa khách sạn này vì có dữ liệu liên quan (đặt chỗ, đánh giá, v.v.)' 
+      });
+    } else {
+      res.status(500).json({ message: 'Error deleting hotel' });
+    }
   }
 });
 

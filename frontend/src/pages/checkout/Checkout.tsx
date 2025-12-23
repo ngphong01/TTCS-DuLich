@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PaymentAPI, UserAPI, BookingAPI } from '../../utils/api';
 import { getDestinationBySlug } from '../../services/destination';
+import { getTourById, getTourBySlug } from '../../services/tour';
 import {
   CreditCardIcon,
   BanknotesIcon,
@@ -48,6 +49,7 @@ export default function CheckoutPage() {
   const [coupon, setCoupon] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
 
   const paymentOptions = [
     {
@@ -219,8 +221,9 @@ export default function CheckoutPage() {
     }
   }
 
-  // Prefill from query: ?amount=... or ?slug=...&guests=... or ?type=combo&...
+  // Prefill from query: ?amount=... or ?slug=...&guests=... or ?type=combo&... or ?type=tour&id=...
   useEffect(() => {
+    setIsLoadingData(true);
     const qAmount = searchParams.get('amount');
     const slug = searchParams.get('slug') || searchParams.get('destination');
     const qGuests = Number(searchParams.get('guests') || '1');
@@ -228,6 +231,9 @@ export default function CheckoutPage() {
     const type = searchParams.get('type');
     const title = searchParams.get('title');
     const includes = searchParams.get('includes');
+    const tourId = searchParams.get('id');
+    const adults = Number(searchParams.get('adults') || '1');
+    const children = Number(searchParams.get('children') || '0');
     
     if (qMethod) setMethod(qMethod);
     setGuests(Math.max(1, qGuests));
@@ -250,6 +256,165 @@ export default function CheckoutPage() {
       if (qAmount) {
         setAmount(qAmount);
         setBasePrice(Number(qAmount));
+        setIsLoadingData(false);
+      } else {
+        setIsLoadingData(false);
+      }
+      return;
+    }
+    
+    // Tour booking from TourDetail page
+    if (type === 'tour' && tourId) {
+      const id = Number(tourId);
+      const tourSlug = searchParams.get('slug'); // Get slug as fallback
+      console.log('🔍 Checkout: Fetching tour by ID', { id, slug: tourSlug, adults, children, type, tourId });
+      
+      if (!isNaN(id) && id > 0) {
+        // Try fetching by ID first
+        getTourById(id)
+          .then((tour) => {
+            console.log('✅ Tour fetched by ID:', { 
+              id: tour?.id, 
+              name: tour?.name, 
+              price: tour?.price,
+              rawTour: tour 
+            });
+            
+            // Clear any previous errors
+            setErrorMsg(null);
+            
+            const price = Number(tour?.price || 0);
+            console.log('💰 Price parsed:', { rawPrice: tour?.price, parsedPrice: price });
+            
+            if (price > 0) {
+              // Tính giá: adults * price + children * price * 0.7
+              const totalPrice = (price * adults) + (price * 0.7 * children);
+              const serviceFee = totalPrice * 0.05;
+              const grandTotal = totalPrice + serviceFee;
+              const finalAmount = Math.round(grandTotal);
+              
+              console.log('💰 Calculated price:', { 
+                price, 
+                adults, 
+                children, 
+                totalPrice, 
+                serviceFee, 
+                grandTotal, 
+                finalAmount 
+              });
+              
+              // Set all state at once
+              setBasePrice(price);
+              setDestinationId(tour?.destinationId || null);
+              setDestinationName(tour?.name || null);
+              setDescription(`Thanh toán tour: ${tour.name || 'Tour'}`);
+              setGuests(adults + children);
+              
+              // Set amount - this should trigger re-render
+              const amountString = String(finalAmount);
+              setAmount(amountString);
+              
+              console.log('✅ Amount set to:', amountString, 'Type:', typeof amountString);
+              
+              // Force a re-render check
+              setTimeout(() => {
+                console.log('🔍 Double check amount state after set:', { 
+                  amountState: amountString,
+                  subtotal: Number(amountString || 0),
+                  basePrice: price
+                });
+              }, 100);
+            } else {
+              console.warn('⚠️ Tour price is 0 or invalid:', { 
+                price, 
+                rawPrice: tour?.price,
+                tourId: tour?.id 
+              });
+              setErrorMsg('Tour không có giá. Vui lòng liên hệ hỗ trợ.');
+              setBasePrice(0); // Allow manual entry
+            }
+            setIsLoadingData(false);
+          })
+          .catch((err) => {
+            console.error('❌ Error fetching tour by ID:', err);
+            console.error('Error details:', {
+              message: err?.message,
+              response: err?.response?.data,
+              status: err?.response?.status,
+              config: err?.config,
+              stack: err?.stack
+            });
+            
+            // If fetch by ID fails and we have slug, try fetching by slug
+            if (tourSlug && err?.response?.status === 404) {
+              console.log('🔄 Trying to fetch tour by slug as fallback:', tourSlug);
+              return getTourBySlug(tourSlug)
+                .then((tour) => {
+                  console.log('✅ Tour fetched by slug (fallback):', { 
+                    id: tour?.id, 
+                    name: tour?.name, 
+                    price: tour?.price 
+                  });
+                  
+                  setErrorMsg(null);
+                  const price = Number(tour?.price || 0);
+                  
+                  if (price > 0) {
+                    const totalPrice = (price * adults) + (price * 0.7 * children);
+                    const serviceFee = totalPrice * 0.05;
+                    const grandTotal = totalPrice + serviceFee;
+                    const finalAmount = Math.round(grandTotal);
+                    
+                    setBasePrice(price);
+                    setDestinationId(tour?.destinationId || null);
+                    setDestinationName(tour?.name || null);
+                    setDescription(`Thanh toán tour: ${tour.name || 'Tour'}`);
+                    setGuests(adults + children);
+                    setAmount(String(finalAmount));
+                    console.log('✅ Amount set from slug fallback:', finalAmount);
+                  } else {
+                    setErrorMsg('Tour không có giá. Vui lòng liên hệ hỗ trợ.');
+                    setBasePrice(0);
+                  }
+                  setIsLoadingData(false);
+                })
+                .catch((slugErr) => {
+                  console.error('❌ Error fetching tour by slug (fallback):', slugErr);
+                  let errorMessage = 'Không thể tải thông tin tour. ';
+                  if (slugErr?.response?.status === 404) {
+                    errorMessage += 'Tour không tồn tại. ';
+                  } else if (slugErr?.response?.status === 400) {
+                    errorMessage += 'Tour không hợp lệ. ';
+                  } else if (slugErr?.code === 'NETWORK_ERROR' || slugErr?.message?.includes('Network')) {
+                    errorMessage += 'Lỗi kết nối mạng. ';
+                  }
+                  errorMessage += 'Vui lòng nhập số tiền thủ công hoặc thử lại sau.';
+                  
+                  setErrorMsg(errorMessage);
+                  setIsLoadingData(false);
+                  setBasePrice(0);
+                });
+            } else {
+              // No slug fallback or different error
+              let errorMessage = 'Không thể tải thông tin tour. ';
+              if (err?.response?.status === 404) {
+                errorMessage += 'Tour không tồn tại. ';
+              } else if (err?.response?.status === 400) {
+                errorMessage += 'ID tour không hợp lệ. ';
+              } else if (err?.code === 'NETWORK_ERROR' || err?.message?.includes('Network')) {
+                errorMessage += 'Lỗi kết nối mạng. ';
+              }
+              errorMessage += 'Vui lòng nhập số tiền thủ công hoặc thử lại sau.';
+              
+              setErrorMsg(errorMessage);
+              setIsLoadingData(false);
+              setBasePrice(0);
+            }
+          });
+      } else {
+        console.error('❌ Invalid tour ID:', tourId, 'parsed as:', id);
+        setErrorMsg('ID tour không hợp lệ.');
+        setIsLoadingData(false);
       }
       return;
     }
@@ -257,35 +422,113 @@ export default function CheckoutPage() {
     // Regular tour booking
     if (qAmount) {
       setAmount(qAmount);
+      setIsLoadingData(false);
       return;
     }
     if (slug) {
+      console.log('🔍 Checkout: Fetching destination by slug', { slug, qGuests });
       setDestinationSlug(slug);
       getDestinationBySlug(slug)
         .then((dest) => {
+          console.log('✅ Destination fetched:', { 
+            id: dest?.id, 
+            name: dest?.name, 
+            price: dest?.price,
+            rawDestination: dest 
+          });
           const price = Number(dest?.price || 0);
+          console.log('💰 Destination price parsed:', { rawPrice: dest?.price, parsedPrice: price });
+          
           setDestinationId((dest as any)?.id ?? null);
           setDestinationName((dest as any)?.name ?? null);
           setBasePrice(price);
+          
           if (price > 0) {
-            setAmount(String(price * Math.max(1, qGuests)));
-            setDescription(`Thanh toán tour: ${dest.name}`);
+            const totalAmount = price * Math.max(1, qGuests);
+            const amountString = String(totalAmount);
+            setAmount(amountString);
+            setDescription(`Thanh toán tour: ${dest.name || 'Điểm đến'}`);
+            console.log('✅ Destination amount set:', { 
+              price, 
+              qGuests, 
+              totalAmount, 
+              amountString 
+            });
+          } else {
+            console.warn('⚠️ Destination price is 0 or invalid:', { 
+              price, 
+              rawPrice: dest?.price,
+              destinationId: dest?.id,
+              destinationName: dest?.name
+            });
+            setErrorMsg('Điểm đến này không có giá. Vui lòng liên hệ hỗ trợ hoặc nhập số tiền thủ công.');
           }
+          setIsLoadingData(false);
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error('❌ Error fetching destination:', err);
+          console.error('Error details:', {
+            message: err?.message,
+            response: err?.response?.data,
+            status: err?.response?.status,
+            config: err?.config,
+            stack: err?.stack
+          });
+          
+          // Provide more specific error messages
+          let errorMessage = 'Không thể tải thông tin điểm đến. ';
+          if (err?.response?.status === 404) {
+            errorMessage += 'Điểm đến không tồn tại. ';
+          } else if (err?.response?.status === 400) {
+            errorMessage += 'Slug không hợp lệ. ';
+          } else if (err?.code === 'NETWORK_ERROR' || err?.message?.includes('Network')) {
+            errorMessage += 'Lỗi kết nối mạng. ';
+          }
+          errorMessage += 'Vui lòng nhập số tiền thủ công hoặc thử lại sau.';
+          
+          setErrorMsg(errorMessage);
+          setIsLoadingData(false);
+          
+          // Allow manual entry even if fetch fails
+          setBasePrice(0); // Reset basePrice to allow manual entry
+        });
+    } else {
+      // No parameters - allow manual entry
+      console.log('ℹ️ No slug/destination parameter - allowing manual entry');
+      setBasePrice(0); // Ensure basePrice is 0 to allow manual entry
+      setIsLoadingData(false);
     }
   }, [searchParams]);
 
   // Totals
-  const subtotal = useMemo(() => Number(amount || 0), [amount]);
+  const subtotal = useMemo(() => {
+    const num = Number(amount || 0);
+    console.log('💰 Subtotal calculation:', { amount, parsed: num });
+    return num;
+  }, [amount]);
   const discountAmount = useMemo(
     () => Math.max(0, Math.round(subtotal * (discountPercent / 100))),
     [subtotal, discountPercent]
   );
   const finalAmount = useMemo(() => Math.max(0, subtotal - discountAmount), [subtotal, discountAmount]);
-  const formattedVnd = useMemo(() => subtotal.toLocaleString('vi-VN'), [subtotal]);
+  const formattedVnd = useMemo(() => {
+    const formatted = subtotal.toLocaleString('vi-VN');
+    console.log('💰 Formatted VND:', { subtotal, formatted });
+    return formatted;
+  }, [subtotal]);
   const formattedDiscount = useMemo(() => (discountAmount || 0).toLocaleString('vi-VN'), [discountAmount]);
   const formattedFinal = useMemo(() => finalAmount.toLocaleString('vi-VN'), [finalAmount]);
+  
+  // Debug: Log amount changes
+  useEffect(() => {
+    console.log('🔍 Amount state changed:', { 
+      amount, 
+      type: typeof amount,
+      subtotal,
+      formattedVnd,
+      formattedFinal
+    });
+  }, [amount, subtotal, formattedVnd, formattedFinal]);
   const qr = useMemo(() => {
     const amountNumber = Number(finalAmount || 0);
     const bank = (process.env.REACT_APP_VIETQR_BANK as string | undefined) || 'tpbank';
@@ -532,25 +775,57 @@ export default function CheckoutPage() {
               </label>
               <div className="relative">
                 <input
-                  className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold transition-all"
+                  className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Nhập số tiền"
                   type="number"
+                  min="0"
+                  step="1000"
                   value={amount}
-                  onChange={e=>{ if (basePrice <= 0) setAmount(e.target.value); }}
-                  readOnly={basePrice > 0}
+                  onChange={(e) => {
+                    // Always allow manual entry - readOnly will prevent if needed
+                    setAmount(e.target.value);
+                  }}
+                  readOnly={basePrice > 0 && !errorMsg && !isLoadingData}
+                  disabled={isLoadingData}
                   required
                 />
-                {basePrice > 0 && (
+                {basePrice > 0 && !errorMsg && !isLoadingData && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
                     <span className="text-gray-400 text-sm">🔒</span>
+                  </div>
+                )}
+                {errorMsg && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <span className="text-blue-600 text-sm" title="Có thể nhập thủ công">✏️</span>
                   </div>
                 )}
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">
-                  Tổng: <span className="font-bold text-blue-600 text-lg">{formattedVnd} VNĐ</span>
+                  {isLoadingData ? (
+                    <span className="text-gray-400">Đang tải thông tin tour...</span>
+                  ) : amount && Number(amount) > 0 ? (
+                    <>
+                      {discountPercent > 0 ? (
+                        <>
+                          Tổng: <span className="font-bold text-blue-600 text-lg">{formattedFinal} VNĐ</span>
+                          <span className="text-gray-400 text-xs ml-2 line-through">{formattedVnd} VNĐ</span>
+                        </>
+                      ) : (
+                        <>
+                          Tổng: <span className="font-bold text-blue-600 text-lg">{formattedVnd} VNĐ</span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">
+                      {basePrice > 0 
+                        ? 'Vui lòng nhập số tiền' 
+                        : 'Vui lòng nhập số tiền hoặc chọn tour từ trang chi tiết'}
+                    </span>
+                  )}
                 </span>
-                {basePrice > 0 && (
+                {basePrice > 0 && !isLoadingData && amount && Number(amount) > 0 && (
                   <span className="text-gray-400">(tự tính = giá tour × số khách)</span>
                 )}
               </div>
@@ -654,20 +929,32 @@ export default function CheckoutPage() {
                 {couponMsg && (
                   <p className={`mt-2 text-sm ${discountPercent ? 'text-green-600' : 'text-red-600'}`}>{couponMsg}</p>
                 )}
-                <div className="mt-3 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Tạm tính</span>
-                    <span className="font-semibold">{formattedVnd} VNĐ</span>
+                {isLoadingData ? (
+                  <div className="mt-3 text-sm text-gray-400 text-center py-2">
+                    Đang tải thông tin...
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Giảm giá {discountPercent}%</span>
-                    <span className="font-semibold">− {formattedDiscount} VNĐ</span>
+                ) : amount && Number(amount) > 0 ? (
+                  <div className="mt-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Tạm tính</span>
+                      <span className="font-semibold">{formattedVnd} VNĐ</span>
+                    </div>
+                    {discountPercent > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Giảm giá {discountPercent}%</span>
+                        <span className="font-semibold text-green-600">− {formattedDiscount} VNĐ</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200 mt-2">
+                      <span className="font-bold text-gray-900">Cần thanh toán</span>
+                      <span className="font-bold text-blue-600 text-lg">{formattedFinal} VNĐ</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-200 mt-2">
-                    <span className="font-bold text-gray-900">Cần thanh toán</span>
-                    <span className="font-bold text-blue-600 text-lg">{formattedFinal} VNĐ</span>
+                ) : (
+                  <div className="mt-3 text-sm text-gray-500 text-center py-2">
+                    Vui lòng nhập số tiền để xem tổng thanh toán
                   </div>
-                </div>
+                )}
               </div>
               <div className="grid gap-3">
                 {paymentOptions.map((option) => {
@@ -773,7 +1060,7 @@ export default function CheckoutPage() {
                   <div className="bg-white rounded-xl px-4 py-3 border-2 border-blue-200">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-gray-700">Số tiền cần chuyển:</span>
-                      <span className="text-lg font-bold text-blue-600">{formattedVnd} VNĐ</span>
+                      <span className="text-lg font-bold text-blue-600">{formattedFinal} VNĐ</span>
                     </div>
                   </div>
 

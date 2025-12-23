@@ -217,7 +217,8 @@ export default function TourDetail() {
       alert('Vui lòng chọn ngày khởi hành');
       return;
     }
-    navigate(`/checkout?type=tour&id=${tour?.id}&date=${selectedDate}&adults=${adults}&children=${children}`);
+    // Pass both ID and slug for fallback
+    navigate(`/checkout?type=tour&id=${tour?.id}&slug=${tour?.slug}&date=${selectedDate}&adults=${adults}&children=${children}`);
   };
 
   const handleMonthChange = (direction: 'prev' | 'next') => {

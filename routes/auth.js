@@ -335,6 +335,23 @@ router.post('/login', authLimiter, async (req, res) => {
       }
     }
 
+    // 🎨 Tự động tạo avatar nếu user chưa có avatar
+    if (!user.avatarUrl) {
+      const { createUserAvatar } = require('../lib/avatarGenerator');
+      const randomAvatar = createUserAvatar(user.name, user.email, user.id);
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { avatarUrl: randomAvatar },
+        });
+        user.avatarUrl = randomAvatar;
+        console.log('🎨 Auto-generated avatar for user:', { id: user.id, avatarUrl: randomAvatar });
+      } catch (avatarError) {
+        console.error('❌ Error updating avatar:', avatarError);
+        // Không block login nếu tạo avatar thất bại
+      }
+    }
+
     const { passwordHash, ...safe } = user;
     console.log('✅ User logged in successfully:', { id: safe.id, email: safe.email, name: safe.name });
     const token = signToken(user);
@@ -771,12 +788,29 @@ router.get('/callback/:provider', async (req, res) => {
       let googleUser = {};
       try {
         googleUser = await userInfoResponse.json();
+        console.log('✅ Google userinfo response received:', {
+          email: googleUser.email,
+          name: googleUser.name,
+          picture: googleUser.picture,
+          hasPicture: !!googleUser.picture,
+          pictureType: typeof googleUser.picture,
+          allFields: Object.keys(googleUser)
+        });
       } catch (parseError) {
         console.error('❌ Unable to parse Google userinfo response:', parseError);
         throw new Error('Invalid response from Google userinfo endpoint');
       }
 
       const { email, name, picture } = googleUser;
+
+      console.log('🔍 Google user info received:', { 
+        email, 
+        name, 
+        picture,
+        hasPicture: !!picture,
+        pictureType: typeof picture,
+        pictureLength: picture ? picture.length : 0
+      });
 
       if (!email) {
         throw new Error('No email from Google');
@@ -803,31 +837,72 @@ router.get('/callback/:provider', async (req, res) => {
       }
 
       if (!user) {
+        // Tạo user mới với avatar từ Google hoặc tạo avatar random nếu Google không có
+        const { createUserAvatar } = require('../lib/avatarGenerator');
+        const finalAvatar = picture ? sanitizeAvatarUrl(picture) : null;
+        
+        // Tạm thời tạo user với avatar từ Google hoặc null
         user = await prisma.user.create({
           data: {
             email,
             name: name || email.split('@')[0],
             role: 'USER',
-            avatarUrl: sanitizeAvatarUrl(picture),
+            avatarUrl: finalAvatar,
             passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
           },
           select: { id: true, email: true, name: true, role: true, avatarUrl: true },
         });
+        
+        // Nếu không có avatar từ Google, tạo avatar random
+        if (!finalAvatar) {
+          const randomAvatar = createUserAvatar(user.name, user.email, user.id);
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { avatarUrl: randomAvatar },
+            select: { id: true, email: true, name: true, role: true, avatarUrl: true },
+          });
+          console.log('🎨 Created new user with auto-generated avatar:', { id: user.id, avatarUrl: user.avatarUrl });
+        } else {
+          console.log('✅ Created new user with Google avatar:', { id: user.id, avatarUrl: user.avatarUrl });
+        }
       } else {
-        // 🔥 CRITICAL: Luôn cập nhật avatarUrl từ Google nếu có và user chưa có avatar
+        // 🔥 CRITICAL: Luôn cập nhật avatarUrl từ Google nếu có picture
+        // Nếu không có avatar từ Google và user chưa có avatar, tạo avatar random
         const updates = {};
         if ((!user.name || user.name.length < 2) && name) updates.name = name;
-        // Cập nhật avatarUrl nếu user chưa có hoặc avatarUrl cũ không hợp lệ
-        if (picture && (!user.avatarUrl || user.avatarUrl.length < 5)) {
-          updates.avatarUrl = sanitizeAvatarUrl(picture);
+        
+        // Luôn cập nhật avatar từ Google nếu có (để đảm bảo avatar luôn mới nhất)
+        if (picture) {
+          const sanitizedPicture = sanitizeAvatarUrl(picture);
+          // Chỉ update nếu avatar khác với avatar hiện tại hoặc user chưa có avatar
+          if (!user.avatarUrl || user.avatarUrl !== sanitizedPicture) {
+            updates.avatarUrl = sanitizedPicture;
+            console.log('🔄 Updating avatar from Google:', { 
+              old: user.avatarUrl, 
+              new: sanitizedPicture 
+            });
+          }
+        } else if (!user.avatarUrl) {
+          // Nếu không có avatar từ Google và user chưa có avatar, tạo avatar random
+          const { createUserAvatar } = require('../lib/avatarGenerator');
+          const randomAvatar = createUserAvatar(user.name, user.email, user.id);
+          updates.avatarUrl = randomAvatar;
+          console.log('🎨 Auto-generating avatar for existing user:', { id: user.id, avatarUrl: randomAvatar });
         }
-        if (Object.keys(updates).length) {
+        
+        if (Object.keys(updates).length > 0) {
           user = await prisma.user.update({
             where: { id: user.id },
             data: updates,
             select: { id: true, email: true, name: true, role: true, avatarUrl: true },
           });
-          console.log('✅ Updated user avatar from Google:', user.avatarUrl);
+          console.log('✅ Updated user from Google OAuth:', { 
+            id: user.id, 
+            name: user.name, 
+            avatarUrl: user.avatarUrl 
+          });
+        } else {
+          console.log('ℹ️  No updates needed for user:', { id: user.id, avatarUrl: user.avatarUrl });
         }
       }
 
@@ -901,20 +976,46 @@ router.get('/callback/:provider', async (req, res) => {
       }
 
       if (!user) {
+        // Tạo user mới với avatar từ Facebook hoặc tạo avatar random nếu Facebook không có
+        const { createUserAvatar } = require('../lib/avatarGenerator');
+        const finalAvatar = picture?.data?.url ? sanitizeAvatarUrl(picture.data.url) : null;
+        
+        // Tạm thời tạo user với avatar từ Facebook hoặc null
         user = await prisma.user.create({
           data: {
             email,
             name: name || email.split('@')[0],
             role: 'USER',
-            avatarUrl: sanitizeAvatarUrl(picture?.data?.url),
+            avatarUrl: finalAvatar,
             passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
           },
           select: { id: true, email: true, name: true, role: true, avatarUrl: true },
         });
+        
+        // Nếu không có avatar từ Facebook, tạo avatar random
+        if (!finalAvatar) {
+          const randomAvatar = createUserAvatar(user.name, user.email, user.id);
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { avatarUrl: randomAvatar },
+            select: { id: true, email: true, name: true, role: true, avatarUrl: true },
+          });
+          console.log('🎨 Created new user with auto-generated avatar:', { id: user.id, avatarUrl: user.avatarUrl });
+        } else {
+          console.log('✅ Created new user with Facebook avatar:', { id: user.id, avatarUrl: user.avatarUrl });
+        }
       } else {
         const updates = {};
         if ((!user.name || user.name.length < 2) && name) updates.name = name;
-        if (!user.avatarUrl && picture?.data?.url) updates.avatarUrl = sanitizeAvatarUrl(picture.data.url);
+        if (picture?.data?.url && (!user.avatarUrl || user.avatarUrl !== sanitizeAvatarUrl(picture.data.url))) {
+          updates.avatarUrl = sanitizeAvatarUrl(picture.data.url);
+        } else if (!user.avatarUrl) {
+          // Nếu không có avatar từ Facebook và user chưa có avatar, tạo avatar random
+          const { createUserAvatar } = require('../lib/avatarGenerator');
+          const randomAvatar = createUserAvatar(user.name, user.email, user.id);
+          updates.avatarUrl = randomAvatar;
+          console.log('🎨 Auto-generating avatar for existing user:', { id: user.id, avatarUrl: randomAvatar });
+        }
         if (Object.keys(updates).length) {
           user = await prisma.user.update({
             where: { id: user.id },
@@ -957,6 +1058,7 @@ router.get('/authorize/:provider', (req, res) => {
     if (provider === 'google') {
       const authUrl = process.env.OAUTH_GOOGLE_AUTH_URL || 'https://accounts.google.com/o/oauth2/v2/auth';
       const clientId = process.env.GOOGLE_CLIENT_ID;
+      // 🔥 CRITICAL: Đảm bảo scope bao gồm profile để lấy avatar
       const scope = process.env.OAUTH_GOOGLE_SCOPE || 'openid email profile';
       const redirectUri = process.env.OAUTH_GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/callback/google';
       if (!clientId) {

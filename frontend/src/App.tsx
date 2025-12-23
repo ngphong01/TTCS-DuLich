@@ -83,6 +83,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminPromoCodes from './pages/admin/AdminPromoCodes';
 import AdminBlogs from './pages/admin/AdminBlogs';
 import AdminBanners from './pages/admin/AdminBanners';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // Simple placeholder pages
 
@@ -434,6 +435,7 @@ function AppContent() {
           <Route element={<AdminRoute />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/destinations" element={<AdminDestinations />} />
               <Route path="/admin/tours" element={<AdminTours />} />
