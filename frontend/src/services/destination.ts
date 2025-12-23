@@ -11,6 +11,7 @@ export type Destination = {
   featured?: boolean;
   price?: number | null;
   categoryId?: number | null;
+  rating?: number | null;
 };
 
 export async function getDestinations() {

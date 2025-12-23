@@ -1,12 +1,47 @@
 .env
 node_modules
 
-# Upload files (keep directory structure)
-uploads/avatars/*
-uploads/destinations/*
+# Upload files - Only ignore user-uploaded files (with timestamp pattern)
+# User uploads have pattern: avatar-{timestamp}-{random}.jpg
+# Seed images (ha-long4.jpg, phu-quoc.jpg, etc.) are kept and committed
+
+# Ignore user uploads in avatars (pattern: avatar-{timestamp}-{random})
+uploads/avatars/avatar-*.jpg
+uploads/avatars/avatar-*.png
+
+# Ignore user uploads in other folders
+uploads/destinations/destination-*.jpg
+uploads/destinations/destination-*.png
+uploads/tours/tour-*.jpg
+uploads/tours/tour-*.png
+uploads/hotels/hotel-*.jpg
+uploads/hotels/hotel-*.png
+uploads/restaurants/restaurant-*.jpg
+uploads/restaurants/restaurant-*.png
+uploads/reviews/review-*.jpg
+uploads/reviews/review-*.png
+uploads/banners/banner-*.jpg
+uploads/banners/banner-*.png
+uploads/blogs/blog-*.jpg
+uploads/blogs/blog-*.png
+
+# Keep directory structure (.gitkeep files)
 !uploads/avatars/.gitkeep
 !uploads/destinations/.gitkeep
+!uploads/tours/.gitkeep
+!uploads/hotels/.gitkeep
+!uploads/restaurants/.gitkeep
+!uploads/reviews/.gitkeep
+!uploads/banners/.gitkeep
+!uploads/blogs/.gitkeep
 !uploads/.gitkeep
+
+# Keep logo folder (all files in Logo folder)
+!uploads/Logo/**
+
+# IMPORTANT: Seed images are kept because they don't match the ignore patterns above
+# Seed images are named like: ha-long4.jpg, phu-quoc.jpg, Tokyo.jpg, etc.
+# They are NOT ignored because they don't start with "avatar-", "destination-", etc.
 
 # Database
 *.db

@@ -3,7 +3,7 @@ import Table from '../../components/Table';
 import Skeleton from '../../components/Skeleton';
 import { createDestination, deleteDestination, getDestinationsPaged, updateDestination } from '../../services/destination';
 import toast from 'react-hot-toast';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,6 +59,7 @@ export default function AdminDestinations() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const pageSize = 10;
+  const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery<PageResult>({
     queryKey: ['admin', 'destinations', page, pageSize],
@@ -142,7 +143,13 @@ export default function AdminDestinations() {
       setSelectedImage(null);
       setImagePreview(null);
       setShowCreateForm(false);
-      refetch();
+      // Invalidate tất cả queries liên quan đến destinations và refetch
+      await queryClient.invalidateQueries({ queryKey: ['destinations'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'destinations'] });
+      // Reset về page 1 để hiển thị destination mới
+      setPage(1);
+      // Refetch để cập nhật danh sách
+      await refetch();
     } catch (err: any) {
       console.error('❌ Error creating destination:', err);
       if (err?.errors) {
@@ -158,7 +165,10 @@ export default function AdminDestinations() {
     try {
       await updateDestination(id, patch);
       toast.success('Đã cập nhật thành công!');
-      refetch();
+      // Invalidate tất cả queries liên quan đến destinations và refetch
+      await queryClient.invalidateQueries({ queryKey: ['destinations'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'destinations'] });
+      await refetch();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Cập nhật thất bại');
     }
@@ -169,7 +179,10 @@ export default function AdminDestinations() {
     try {
       await deleteDestination(id);
       toast.success('Đã xóa thành công!');
-      refetch();
+      // Invalidate tất cả queries liên quan đến destinations và refetch
+      await queryClient.invalidateQueries({ queryKey: ['destinations'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'destinations'] });
+      await refetch();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Xóa thất bại');
     }

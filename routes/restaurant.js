@@ -170,13 +170,32 @@ router.put('/:id', authRequired, isAdmin, async (req, res) => {
 router.delete('/:id', authRequired, isAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
+    
+    // Check if restaurant has bookings
+    const bookings = await prisma.bookingRestaurant.findMany({
+      where: { restaurantId: id },
+      take: 1,
+    });
+    
+    if (bookings.length > 0) {
+      return res.status(400).json({ 
+        message: 'Không thể xóa nhà hàng này vì đã có đặt chỗ. Vui lòng xóa các đặt chỗ trước.' 
+      });
+    }
+    
     await prisma.restaurant.delete({ where: { id } });
     
     console.log('✅ Restaurant deleted successfully:', { id });
     res.status(204).send();
   } catch (error) {
     console.error('❌ Error deleting restaurant:', error);
-    res.status(500).json({ message: 'Error deleting restaurant' });
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Không thể xóa nhà hàng này vì có dữ liệu liên quan (đặt chỗ, đánh giá, v.v.)' 
+      });
+    } else {
+      res.status(500).json({ message: 'Error deleting restaurant' });
+    }
   }
 });
 

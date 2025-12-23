@@ -22,6 +22,7 @@ export type Tour = {
   faq?: any;
   policies?: any;
   transport?: string | null;
+  departurePoint?: string | null;
   destinationId?: number | null;
   destination?: {
     id: number;
@@ -44,6 +45,11 @@ export async function getTourBySlug(slug: string) {
   return res.data as Tour;
 }
 
+export async function getTourById(id: number) {
+  const res = await api.get(`/tour/by-id/${id}`);
+  return res.data as Tour;
+}
+
 export async function getToursPaged(
   page: number,
   limit: number,
@@ -53,6 +59,8 @@ export async function getToursPaged(
     minPrice?: number;
     maxPrice?: number;
     tag?: string;
+    departureDate?: string;
+    returnDate?: string;
   }
 ) {
   const res = await api.get('/tour', {

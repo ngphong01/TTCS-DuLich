@@ -2,19 +2,27 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
-// Multiple API Keys for rotation
-const API_KEYS = [
-  'AIzaSyDCpK8-nP27et1qWdxdZl6p_R30KsrY4yc', // New API key
-  'AIzaSyDh8TWnKpvVypd9Az5tDw3k9KJCNv1dBKA',
-  'AIzaSyCYOjeLTL_SskjEQb0eOSN6-oH0pwMEswo',
-  'AIzaSyB3UW_UVWWfsKpoRd4Hn-zORukmp-7O2GM',
-  process.env.GEMINI_API_KEY // Fallback to .env key if exists
-].filter(Boolean); // Remove empty values
+// Load API keys from environment variables only (security best practice)
+// Support multiple keys via comma-separated values: GEMINI_API_KEY=key1,key2,key3
+function loadApiKeys() {
+  const envKey = process.env.GEMINI_API_KEY;
+  if (!envKey) {
+    return [];
+  }
+  
+  // Split by comma and trim whitespace
+  const keys = envKey.split(',').map(key => key.trim()).filter(Boolean);
+  return keys;
+}
 
+const API_KEYS = loadApiKeys();
 let currentKeyIndex = 0;
 
 // Get current API client
 function getGeminiClient() {
+  if (API_KEYS.length === 0) {
+    throw new Error('No Gemini API keys configured. Please set GEMINI_API_KEY in your .env file.');
+  }
   const apiKey = API_KEYS[currentKeyIndex];
   if (!apiKey) {
     throw new Error('No Gemini API keys available');
@@ -28,8 +36,15 @@ function rotateApiKey() {
   console.log(`🔄 Switched to API key ${currentKeyIndex + 1}/${API_KEYS.length}`);
 }
 
-// Initialize with first key
-let genAI = getGeminiClient();
+// Initialize with first key (if available)
+let genAI = null;
+if (API_KEYS.length > 0) {
+  try {
+    genAI = getGeminiClient();
+  } catch (error) {
+    console.warn('⚠️  Could not initialize Gemini client:', error.message);
+  }
+}
 
 const systemPrompt = `Bạn là Bredan, AI Assistant thân thiện và chuyên nghiệp của TravelGo - một công ty du lịch hàng đầu Việt Nam.
 
@@ -54,15 +69,19 @@ Thông tin công ty:
 - Email: phong@triennguyen.com`;
 
 async function chatWithGemini(userMessage, conversationHistory = []) {
+  // Check if API keys are configured
+  if (API_KEYS.length === 0) {
+    const error = new Error('GEMINI_API_KEY chưa được cấu hình. Vui lòng thêm GEMINI_API_KEY vào file .env');
+    error.userFriendly = true;
+    throw error;
+  }
+  
   // Try all API keys if needed
   let lastError = null;
   const maxKeyAttempts = API_KEYS.length;
   
   for (let keyAttempt = 0; keyAttempt < maxKeyAttempts; keyAttempt++) {
     try {
-      if (API_KEYS.length === 0) {
-        throw new Error('No Gemini API keys available');
-      }
 
       console.log(`Calling Gemini API (Key ${currentKeyIndex + 1}/${API_KEYS.length}) with message:`, userMessage.substring(0, 50) + '...');
       
@@ -182,49 +201,53 @@ async function chatWithGemini(userMessage, conversationHistory = []) {
     // If we broke out of retry loop, continue to next key attempt
     continue;
     
-  } catch (error) {
-    lastError = error;
-    
-    // If this wasn't the last key attempt, try next key
-    if (keyAttempt < maxKeyAttempts - 1) {
-      console.log(`⚠️  Key ${currentKeyIndex + 1} failed completely, trying next key...`);
-      rotateApiKey();
-      continue;
+    } catch (error) {
+      lastError = error;
+      
+      // If this wasn't the last key attempt, try next key
+      if (keyAttempt < maxKeyAttempts - 1) {
+        console.log(`⚠️  Key ${currentKeyIndex + 1} failed completely, trying next key...`);
+        rotateApiKey();
+        continue;
+      }
+      
+      // All keys failed
+      break;
     }
-    
-    // All keys failed
-    break;
   }
-}
 
-// All API keys exhausted
-console.error('❌ All API keys failed. Last error:', lastError?.message);
-console.error('Error details:', {
-  message: lastError?.message,
-  status: lastError?.status,
-  statusText: lastError?.statusText
-});
+  // All API keys exhausted
+  if (lastError) {
+    console.error('❌ All API keys failed. Last error:', lastError?.message);
+    console.error('Error details:', {
+      message: lastError?.message,
+      status: lastError?.status,
+      statusText: lastError?.statusText
+    });
 
-// Provide user-friendly error messages
-if (lastError?.status === 503) {
-  const friendlyError = new Error('AI đang quá tải. Vui lòng thử lại sau vài phút. 🤖');
-  friendlyError.userFriendly = true;
-  friendlyError.originalError = lastError;
-  throw friendlyError;
-} else if (lastError?.status === 429) {
-  const friendlyError = new Error('Đã vượt quá giới hạn yêu cầu. Vui lòng đợi một chút. ⏱️');
-  friendlyError.userFriendly = true;
-  friendlyError.originalError = lastError;
-  throw friendlyError;
-} else if (lastError?.status === 401 || lastError?.status === 403) {
-  console.error('💡 All API keys failed authentication');
-  const friendlyError = new Error('Lỗi xác thực API. Vui lòng liên hệ quản trị viên. 🔐');
-  friendlyError.userFriendly = true;
-  friendlyError.originalError = lastError;
-  throw friendlyError;
-}
+    // Provide user-friendly error messages
+    if (lastError?.status === 503) {
+      const friendlyError = new Error('AI đang quá tải. Vui lòng thử lại sau vài phút. 🤖');
+      friendlyError.userFriendly = true;
+      friendlyError.originalError = lastError;
+      throw friendlyError;
+    } else if (lastError?.status === 429) {
+      const friendlyError = new Error('Đã vượt quá giới hạn yêu cầu. Vui lòng đợi một chút. ⏱️');
+      friendlyError.userFriendly = true;
+      friendlyError.originalError = lastError;
+      throw friendlyError;
+    } else if (lastError?.status === 401 || lastError?.status === 403) {
+      console.error('💡 All API keys failed authentication');
+      const friendlyError = new Error('Lỗi xác thực API. Vui lòng kiểm tra GEMINI_API_KEY trong file .env và đảm bảo API key hợp lệ. 🔐');
+      friendlyError.userFriendly = true;
+      friendlyError.originalError = lastError;
+      throw friendlyError;
+    }
 
-throw lastError || new Error('All API keys exhausted');
+    throw lastError;
+  }
+
+  throw new Error('All API keys exhausted');
 }
 
 module.exports = {

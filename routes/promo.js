@@ -337,15 +337,48 @@ router.put('/admin/:id', authRequired, isAdmin, async (req, res) => {
 router.delete('/admin/:id', authRequired, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const promoId = parseInt(id);
 
-    await prisma.promoCode.delete({
-      where: { id: parseInt(id) },
+    if (isNaN(promoId)) {
+      return res.status(400).json({ message: 'ID không hợp lệ' });
+    }
+
+    // Check if promo code exists
+    const promoCode = await prisma.promoCode.findUnique({
+      where: { id: promoId },
     });
 
+    if (!promoCode) {
+      return res.status(404).json({ message: 'Mã giảm giá không tồn tại' });
+    }
+
+    // Check if promo code has been used in bookings
+    const bookings = await prisma.booking.findMany({
+      where: { promoCodeId: promoId },
+      take: 1,
+    });
+
+    if (bookings.length > 0) {
+      return res.status(400).json({ 
+        message: 'Không thể xóa mã giảm giá này vì đã được sử dụng trong đặt chỗ. Vui lòng vô hiệu hóa thay vì xóa.' 
+      });
+    }
+
+    await prisma.promoCode.delete({
+      where: { id: promoId },
+    });
+
+    console.log('✅ Promo code deleted successfully:', { id: promoId });
     res.json({ message: 'Xóa mã giảm giá thành công' });
   } catch (error) {
-    console.error('Error deleting promo code:', error);
-    res.status(500).json({ message: 'Lỗi xóa mã giảm giá' });
+    console.error('❌ Error deleting promo code:', error);
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Không thể xóa mã giảm giá này vì có dữ liệu liên quan' 
+      });
+    } else {
+      res.status(500).json({ message: 'Lỗi xóa mã giảm giá', error: error.message });
+    }
   }
 });
 

@@ -8,6 +8,7 @@
 
 ## 📑 Mục lục
 
+- [Quick Start](#-quick-start) ⚡
 - [Tính năng chính](#-tính-năng-chính)
 - [Công nghệ sử dụng](#️-công-nghệ-sử-dụng)
 - [Cấu trúc dự án](#-cấu-trúc-dự-án)
@@ -19,6 +20,41 @@
 - [AI Features](#-ai-features)
 - [Deployment](#-deployment)
 - [Tài khoản mặc định](#-tài-khoản-mặc-định)
+
+---
+
+## ⚡ Quick Start
+
+### Clone và Setup nhanh:
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd Travelgo
+
+# 2. Cài đặt dependencies
+npm run install:all
+
+# 3. Setup database (chọn 1 trong 2 cách)
+
+# Cách 1: Import SQL file (khuyến nghị - có đầy đủ dữ liệu)
+mysql -u root -p < database/travelgo_complete.sql
+
+# Cách 2: Sử dụng script tự động
+npm run setup:db
+
+# 4. Cấu hình .env
+cp ENV_SAMPLE.txt .env
+# Chỉnh sửa DATABASE_URL và các thông tin khác trong .env
+
+# 5. Kiểm tra setup (khuyến nghị)
+npm run check
+
+# 6. Chạy ứng dụng
+npm run dev:all
+```
+
+**Xem chi tiết**: [SETUP.md](./SETUP.md) - Hướng dẫn setup đầy đủ với troubleshooting
 
 ---
 

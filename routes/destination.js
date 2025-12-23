@@ -11,10 +11,11 @@ const router = express.Router();
 // ?page=1&pageSize=10&categoryId=1&categoryIds=1,2&q=beach&minPrice=0&maxPrice=10000000&country=vietnam|international&sort=name_asc|name_desc|created_desc|created_asc|featured_first
 router.get(
   '/',
-  cacheResponse({
-    keyPrefix: 'destinations:list',
-    ttl: Number(process.env.CACHE_TTL_SECONDS || 300),
-  }),
+  // Tạm thời tắt cache để debug
+  // cacheResponse({
+  //   keyPrefix: 'destinations:list',
+  //   ttl: Number(process.env.CACHE_TTL_SECONDS || 300),
+  // }),
   async (req, res) => {
   const page = Number(req.query.page || 0);
   const pageSize = Number(req.query.pageSize || 0);
@@ -72,6 +73,12 @@ router.get(
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
+    
+    console.log(`📍 Destinations list fetched: ${items.length} items (page ${page}, total: ${total})`);
+    if (items.length > 0) {
+      console.log(`  First item: ${items[0].name} (ID: ${items[0].id})`);
+    }
+    
     return res.json({ items, total, page, pageSize });
   }
 
@@ -80,24 +87,33 @@ router.get(
     orderBy,
     include: { category: true },
   });
-    res.json(items);
+  
+  console.log(`📍 All destinations fetched: ${items.length} items`);
+  
+  res.json(items);
   }
 );
 
 // GET /api/destination/featured
 router.get(
   '/featured',
-  cacheResponse({
-    keyPrefix: 'destinations:featured',
-    keyBuilder: (req) => `destinations:featured:${req.query.lang || 'en'}`,
-    ttl: Number(process.env.CACHE_TTL_SECONDS || 600),
-  }),
+  // Temporarily disable cache to ensure fresh data
+  // cacheResponse({
+  //   keyPrefix: 'destinations:featured',
+  //   keyBuilder: (req) => `destinations:featured:${req.query.lang || 'en'}`,
+  //   ttl: Number(process.env.CACHE_TTL_SECONDS || 600),
+  // }),
   async (req, res) => {
   try {
     const items = await prisma.destination.findMany({
       where: { featured: true },
       orderBy: { createdAt: 'desc' },
       take: 6,
+    });
+    
+    console.log(`📍 Featured destinations fetched: ${items.length} items`);
+    items.forEach((item) => {
+      console.log(`  - ${item.name} (ID: ${item.id}, featured: ${item.featured})`);
     });
     
     // 🔥 CRITICAL: Tính rating từ reviews cho mỗi destination
@@ -169,10 +185,16 @@ router.post('/', authRequired, isAdmin, async (req, res) => {
     name: created.name, 
     slug: created.slug,
     price: created.price,
-    image: created.image
+    image: created.image,
+    featured: created.featured
   });
   
+  // Invalidate all destination-related cache
   await invalidatePattern('destinations:*');
+  
+  // Also log cache invalidation
+  console.log('🔄 Cache invalidated for destinations:*');
+  
   res.status(201).json(created);
 });
 
@@ -193,6 +215,20 @@ router.put('/:id', authRequired, isAdmin, async (req, res) => {
 router.delete('/:id', authRequired, isAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
+    
+    // Check if destination has tours, hotels, or restaurants
+    const [tours, hotels, restaurants] = await Promise.all([
+      prisma.tour.findMany({ where: { destinationId: id }, take: 1 }),
+      prisma.hotel.findMany({ where: { destinationId: id }, take: 1 }),
+      prisma.restaurant.findMany({ where: { destinationId: id }, take: 1 }),
+    ]);
+    
+    if (tours.length > 0 || hotels.length > 0 || restaurants.length > 0) {
+      return res.status(400).json({ 
+        message: 'Không thể xóa điểm đến này vì đã có tour, khách sạn hoặc nhà hàng liên quan. Vui lòng xóa các dữ liệu liên quan trước.' 
+      });
+    }
+    
     await prisma.destination.delete({ where: { id } });
     
     console.log('✅ Destination deleted successfully:', { id });
@@ -200,7 +236,13 @@ router.delete('/:id', authRequired, isAdmin, async (req, res) => {
     res.status(204).send();
   } catch (error) {
     console.error('❌ Error deleting destination:', error);
-    res.status(500).json({ message: 'Error deleting destination' });
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Không thể xóa điểm đến này vì có dữ liệu liên quan (tour, khách sạn, nhà hàng, v.v.)' 
+      });
+    } else {
+      res.status(500).json({ message: 'Error deleting destination' });
+    }
   }
 });
 

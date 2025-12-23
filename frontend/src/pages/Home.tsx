@@ -167,6 +167,8 @@ function HomeReviewCarousel(): JSX.Element {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [departureDate, setDepartureDate] = useState('');
+  const [returnDate, setReturnDate] = useState('');
   const { data: destinations, isLoading } = useFeaturedDestinations();
   
   // Debug: Log destinations when they load
@@ -194,9 +196,18 @@ export default function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    const params = new URLSearchParams();
     if (searchQuery.trim()) {
-      navigate(`/destinations?q=${encodeURIComponent(searchQuery.trim())}`);
+      params.set('q', searchQuery.trim());
     }
+    if (departureDate) {
+      params.set('departureDate', departureDate);
+    }
+    if (returnDate) {
+      params.set('returnDate', returnDate);
+    }
+    // Luôn navigate ngay cả khi chỉ có ngày (không có query)
+    navigate(`/destinations?${params.toString()}`);
   };
 
   const siteUrl = process.env.REACT_APP_SITE_URL || window.location.origin;
@@ -342,19 +353,22 @@ export default function Home() {
                   <div className="relative">
                     <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
-                      type="text"
-                      placeholder="Ngày đi (dd/mm/yyyy)"
+                      type="date"
+                      value={departureDate}
+                      onChange={(e) => setDepartureDate(e.target.value)}
+                      placeholder="Ngày đi"
                       className="w-full pl-12 pr-4 py-3 text-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/50 shadow-lg"
-                      readOnly
                     />
                   </div>
                   <div className="relative">
                     <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
-                      type="text"
-                      placeholder="Ngày về (dd/mm/yyyy)"
+                      type="date"
+                      value={returnDate}
+                      onChange={(e) => setReturnDate(e.target.value)}
+                      placeholder="Ngày về"
+                      min={departureDate || undefined}
                       className="w-full pl-12 pr-4 py-3 text-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/50 shadow-lg"
-                      readOnly
                     />
                   </div>
                 </div>

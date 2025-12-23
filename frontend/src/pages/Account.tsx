@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { Link } from 'react-router-dom';
 import { 
   UserIcon, 
@@ -59,9 +59,10 @@ export default function AccountPage() {
     }
   }, [searchParams, setSearchParams]);
 
-  // Fetch user info
-  const fetchUserInfo = async () => {
+  // Fetch user info - Memoize với useCallback để tránh re-create function
+  const fetchUserInfo = useCallback(async () => {
     try {
+      setLoading(true);
       console.log('🔍 Account Page: Fetching user info...');
       console.log('🌐 Current URL:', window.location.href);
       
@@ -121,19 +122,71 @@ export default function AccountPage() {
       setLoading(false);
       console.log('🏁 Account Page: Loading finished');
     }
-  };
+  }, [searchParams]);
 
   useEffect(() => {
     console.log('🚀 Account Page: Component mounted, starting fetch...');
     fetchUserInfo();
-  }, [searchParams]);
+  }, [fetchUserInfo]);
 
+  // Fetch lại khi có token mới từ URL
   useEffect(() => {
-    if (!loading && !user) {
-      window.location.assign('/signin');
+    const urlToken = searchParams.get('token');
+    if (urlToken) {
+      console.log('🔑 Token in URL detected, refetching user info...');
+      fetchUserInfo();
     }
-  }, [loading, user]);
+  }, [searchParams, fetchUserInfo]);
 
+  // Ref để tránh fetch nhiều lần
+  const fetchingRef = useRef(false);
+
+  // Listen to avatar-updated event để refetch user info
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      console.log('🔄 Avatar updated event received, refetching user info...');
+      if (!fetchingRef.current) {
+        fetchingRef.current = true;
+        fetchUserInfo().finally(() => {
+          fetchingRef.current = false;
+        });
+      }
+    };
+
+    window.addEventListener('avatar-updated', handleAvatarUpdate);
+    return () => {
+      window.removeEventListener('avatar-updated', handleAvatarUpdate);
+    };
+  }, []);
+
+  // ProtectedRoute đã xử lý redirect, không cần redirect lại ở đây
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     window.location.assign('/signin');
+  //   }
+  // }, [loading, user]);
+
+  // 🔥 CRITICAL: Tất cả hooks phải được gọi TRƯỚC các early return
+  // Memoize avatarUrl để tránh tính toán lại và nháy
+  const avatarUrl = useMemo(() => {
+    if (!user) return null;
+    const url = (user as any)?.avatarUrl || (user as any)?.picture || null;
+    return url;
+  }, [user, (user as any)?.avatarUrl, (user as any)?.picture]);
+  
+  const isImageAvatar = useMemo(() => {
+    return !!(avatarUrl && avatarUrl.length > 5);
+  }, [avatarUrl]);
+  
+  // Get full avatar URL if it's a relative path - Memoize để tránh nháy
+  const fullAvatarUrl = useMemo(() => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    if (avatarUrl.startsWith('/uploads')) return avatarUrl;
+    return `/uploads/avatars/${avatarUrl}`;
+  }, [avatarUrl]);
+
+  // Early returns - sau khi tất cả hooks đã được gọi
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
@@ -144,6 +197,39 @@ export default function AccountPage() {
       </div>
     );
   }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <UserIcon className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">Chưa đăng nhập</h1>
+            <p className="text-gray-600 mb-8">Vui lòng đăng nhập để xem thông tin tài khoản của bạn</p>
+            <div className="space-y-3">
+              <Link 
+                to="/api/auth/oauth/google" 
+                className="block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Đăng nhập ngay
+            </Link>
+              <Link 
+                to="/" 
+                className="block bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+              >
+              Về trang chủ
+            </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const displayName = user.name || user.email?.split('@')[0] || "User";
+  const initial = displayName.slice(0, 1).toUpperCase();
 
 function InlineNameEditor({ current, onSaved }: { current: string; onSaved: (name: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -208,53 +294,6 @@ function InlineNameEditor({ current, onSaved }: { current: string; onSaved: (nam
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md mx-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <UserIcon className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">Chưa đăng nhập</h1>
-            <p className="text-gray-600 mb-8">Vui lòng đăng nhập để xem thông tin tài khoản của bạn</p>
-            <div className="space-y-3">
-              <Link 
-                to="/api/auth/oauth/google" 
-                className="block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Đăng nhập ngay
-            </Link>
-              <Link 
-                to="/" 
-                className="block bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-              >
-              Về trang chủ
-            </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const displayName = user.name || user.email?.split('@')[0] || "User";
-  const initial = displayName.slice(0, 1).toUpperCase();
-  // 🔥 CRITICAL: Đảm bảo đọc đúng avatarUrl từ Google hoặc từ database
-  // Ưu tiên avatarUrl (từ database) sau đó mới đến picture (từ OAuth)
-  const avatarUrl = (user as any).avatarUrl || user.picture || null;
-  const isImageAvatar = !!(avatarUrl && avatarUrl.length > 5);
-  
-  console.log('🖼️ Display Avatar - avatarUrl:', (user as any).avatarUrl, 'picture:', user.picture, 'final:', avatarUrl);
-  
-  // Get full avatar URL if it's a relative path
-  const getAvatarUrl = () => {
-    if (!avatarUrl) return null;
-    if (avatarUrl.startsWith('http')) return avatarUrl;
-    if (avatarUrl.startsWith('/uploads')) return avatarUrl;
-    return `/uploads/avatars/${avatarUrl}`;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -271,12 +310,18 @@ function InlineNameEditor({ current, onSaved }: { current: string; onSaved: (nam
                 <div className="relative">
                   {isImageAvatar ? (
                     <img
-                      src={getAvatarUrl() || '/default-avatar.png'}
+                      key={fullAvatarUrl} // Thêm key để force re-render khi avatar thay đổi
+                      src={fullAvatarUrl || '/default-avatar.png'}
                       alt={displayName}
-                      className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-2xl"
+                      className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-2xl transition-opacity duration-200"
                       onError={(e) => {
+                        console.error('❌ Avatar image failed to load:', fullAvatarUrl);
                         (e.target as HTMLImageElement).src = '/default-avatar.png';
                       }}
+                      onLoad={() => {
+                        console.log('✅ Avatar image loaded successfully:', fullAvatarUrl);
+                      }}
+                      loading="eager"
                     />
                   ) : (
                     <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-white to-gray-100 flex items-center justify-center text-indigo-600 text-4xl font-bold border-4 border-white shadow-2xl">
@@ -593,7 +638,7 @@ function InlineNameEditor({ current, onSaved }: { current: string; onSaved: (nam
           isOpen={showAvatarModal}
           onClose={() => setShowAvatarModal(false)}
           userId={parseInt(user.id)}
-          currentAvatar={getAvatarUrl() || undefined}
+          currentAvatar={fullAvatarUrl || undefined}
           onAvatarChange={(newAvatarUrl) => {
             setUser((prev) => prev ? { ...prev, picture: newAvatarUrl, avatarUrl: newAvatarUrl } as any : prev);
           }}

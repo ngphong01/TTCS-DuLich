@@ -152,14 +152,36 @@ router.put('/:id', authRequired, isAdmin, async (req, res) => {
 router.delete('/:id', authRequired, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.banner.delete({
-      where: { id: parseInt(id) },
+    const bannerId = parseInt(id);
+
+    if (isNaN(bannerId)) {
+      return res.status(400).json({ message: 'ID không hợp lệ' });
+    }
+
+    // Check if banner exists
+    const banner = await prisma.banner.findUnique({
+      where: { id: bannerId },
     });
 
+    if (!banner) {
+      return res.status(404).json({ message: 'Banner không tồn tại' });
+    }
+
+    await prisma.banner.delete({
+      where: { id: bannerId },
+    });
+
+    console.log('✅ Banner deleted successfully:', { id: bannerId });
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting banner:', error);
-    res.status(500).json({ message: 'Failed to delete banner' });
+    console.error('❌ Error deleting banner:', error);
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Không thể xóa banner này vì có dữ liệu liên quan' 
+      });
+    } else {
+      res.status(500).json({ message: 'Failed to delete banner', error: error.message });
+    }
   }
 });
 

@@ -121,8 +121,8 @@ const navigation = [
     textColor: "text-yellow-700",
   },
   {
-    name: "Báo cáo",
-    href: "/admin/reports",
+    name: "Phân tích",
+    href: "/admin/analytics",
     icon: ChartBarIcon,
     color: "from-indigo-500 to-purple-500",
     bgColor: "bg-indigo-50",

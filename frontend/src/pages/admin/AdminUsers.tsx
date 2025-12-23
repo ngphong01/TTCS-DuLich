@@ -161,10 +161,11 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (userId: number, userName: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa người dùng "${userName}"?`)) return;
-
+    // Xóa ngay lập tức, không cần confirm
     try {
       const token = localStorage.getItem('tg_token');
+      toast.loading('Đang xóa người dùng...', { id: 'delete-user' });
+      
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -175,14 +176,15 @@ export default function AdminUsers() {
       });
 
       if (response.ok) {
-        toast.success('Đã xóa người dùng thành công!');
+        toast.success('Đã xóa người dùng thành công!', { id: 'delete-user' });
         refetch();
       } else {
-        toast.error('Không thể xóa người dùng');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || 'Không thể xóa người dùng', { id: 'delete-user' });
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error('Có lỗi xảy ra khi xóa người dùng');
+      toast.error('Có lỗi xảy ra khi xóa người dùng', { id: 'delete-user' });
     }
   };
 
