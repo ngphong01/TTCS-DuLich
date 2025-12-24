@@ -1024,7 +1024,7 @@ MIT License - Xem file `LICENSE`
 
 ---
 
-**Made with ❤️ by TravelGo Team**
+**Made with ❤️ by Phong**
 
 ---
 
