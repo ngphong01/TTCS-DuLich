@@ -4,7 +4,7 @@ echo Starting TravelGo Frontend
 echo ====================================
 echo.
 
-cd /d "%~dp0\frontend"
+cd /d "%~dp0frontend"
 
 echo Checking Node.js...
 node --version >nul 2>&1
@@ -33,4 +33,3 @@ echo.
 npm start
 
 pause
-

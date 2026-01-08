@@ -4,7 +4,8 @@ const DEFAULT_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
 };
 
-// Base URL left empty to use CRA proxy to backend (http://localhost:3001)
+// Base URL left empty to use CRA proxy to backend
+// Frontend runs on http://localhost:3001, proxy forwards to backend on http://localhost:3000
 const BASE_URL = '';
 
 // Helper function to get auth headers

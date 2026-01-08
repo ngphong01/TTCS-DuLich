@@ -1,49 +1,82 @@
+# =====================================================
+# TravelGo - Git Ignore Configuration
+# =====================================================
+# Cấu hình để đảm bảo ảnh seed được commit vào repo
+# Người dùng clone về sẽ có đầy đủ ảnh mẫu
+# =====================================================
+
+# Environment files (chứa thông tin nhạy cảm)
 .env
-node_modules
+.env.local
+.env.*.local
 
-# Upload files - Only ignore user-uploaded files (with timestamp pattern)
-# User uploads have pattern: avatar-{timestamp}-{random}.jpg
-# Seed images (ha-long4.jpg, phu-quoc.jpg, etc.) are kept and committed
+# Dependencies
+node_modules/
 
-# Ignore user uploads in avatars (pattern: avatar-{timestamp}-{random})
-uploads/avatars/avatar-*.jpg
-uploads/avatars/avatar-*.png
+# =====================================================
+# UPLOADS - Chỉ ignore file upload từ user (có timestamp)
+# =====================================================
+# Pattern: {type}-{timestamp}-{random}.{ext}
+# Ví dụ: avatar-1762170176454-446434487.jpg
 
-# Ignore user uploads in other folders
-uploads/destinations/destination-*.jpg
-uploads/destinations/destination-*.png
-uploads/tours/tour-*.jpg
-uploads/tours/tour-*.png
-uploads/hotels/hotel-*.jpg
-uploads/hotels/hotel-*.png
-uploads/restaurants/restaurant-*.jpg
-uploads/restaurants/restaurant-*.png
-uploads/reviews/review-*.jpg
-uploads/reviews/review-*.png
-uploads/banners/banner-*.jpg
-uploads/banners/banner-*.png
-uploads/blogs/blog-*.jpg
-uploads/blogs/blog-*.png
+# Ignore user-uploaded avatars (có timestamp pattern)
+backend/uploads/avatars/avatar-*-*.jpg
+backend/uploads/avatars/avatar-*-*.png
+backend/uploads/avatars/avatar-*-*.jpeg
 
-# Keep directory structure (.gitkeep files)
-!uploads/avatars/.gitkeep
-!uploads/destinations/.gitkeep
-!uploads/tours/.gitkeep
-!uploads/hotels/.gitkeep
-!uploads/restaurants/.gitkeep
-!uploads/reviews/.gitkeep
-!uploads/banners/.gitkeep
-!uploads/blogs/.gitkeep
-!uploads/.gitkeep
+# Ignore user-uploaded destinations
+backend/uploads/destinations/destination-*-*.jpg
+backend/uploads/destinations/destination-*-*.png
+backend/uploads/destinations/destination-*-*.jpeg
 
-# Keep logo folder (all files in Logo folder)
-!uploads/Logo/**
+# Ignore user-uploaded tours
+backend/uploads/tours/tour-*-*.jpg
+backend/uploads/tours/tour-*-*.png
+backend/uploads/tours/tour-*-*.jpeg
 
-# IMPORTANT: Seed images are kept because they don't match the ignore patterns above
-# Seed images are named like: ha-long4.jpg, phu-quoc.jpg, Tokyo.jpg, etc.
-# They are NOT ignored because they don't start with "avatar-", "destination-", etc.
+# Ignore user-uploaded hotels
+backend/uploads/hotels/hotel-*-*.jpg
+backend/uploads/hotels/hotel-*-*.png
+backend/uploads/hotels/hotel-*-*.jpeg
 
-# Database
+# Ignore user-uploaded restaurants
+backend/uploads/restaurants/restaurant-*-*.jpg
+backend/uploads/restaurants/restaurant-*-*.png
+backend/uploads/restaurants/restaurant-*-*.jpeg
+
+# Ignore user-uploaded reviews
+backend/uploads/reviews/review-*-*.jpg
+backend/uploads/reviews/review-*-*.png
+backend/uploads/reviews/review-*-*.jpeg
+
+# Ignore user-uploaded banners
+backend/uploads/banners/banner-*-*.jpg
+backend/uploads/banners/banner-*-*.png
+backend/uploads/banners/banner-*-*.jpeg
+
+# Ignore user-uploaded blogs
+backend/uploads/blogs/blog-*-*.jpg
+backend/uploads/blogs/blog-*-*.png
+backend/uploads/blogs/blog-*-*.jpeg
+
+# =====================================================
+# KEEP - Đảm bảo các file quan trọng được commit
+# =====================================================
+# Keep .gitkeep để giữ cấu trúc thư mục
+!backend/uploads/**/.gitkeep
+!frontend/public/uploads/**/.gitkeep
+
+# Keep Logo folder
+!backend/uploads/Logo/**
+
+# =====================================================
+# QUAN TRỌNG: Ảnh seed KHÔNG bị ignore
+# =====================================================
+# Ảnh seed có tên như: ha-long4.jpg, phu-quoc.jpg, Tokyo.jpg
+# Chúng KHÔNG có pattern timestamp nên KHÔNG bị ignore
+# Người dùng clone về sẽ có đầy đủ ảnh mẫu
+
+# Database files
 *.db
 *.sqlite
 *.sqlite3
@@ -53,3 +86,24 @@ uploads/blogs/blog-*.png
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Build outputs
+frontend/build/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
