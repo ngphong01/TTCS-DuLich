@@ -1,8 +1,11 @@
 // src/lib/api.ts
 import axios from 'axios';
 
+// API Base URL - use environment variable or fallback to relative path (for proxy)
+const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || '';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : '/api',
 });
 
 // 🔥 CRITICAL: Lưu current language để interceptor có thể đọc ngay lập tức

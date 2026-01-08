@@ -1,0 +1,52 @@
+{
+  "name": "travelgo-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "demo": "cross-env DATABASE_URL=mysql://root:123456@localhost:3306/travelgo_demo node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:seed": "node prisma/seed.js",
+    "setup:db": "node scripts/setup-database.js",
+    "check": "node scripts/check-setup.js",
+    "postinstall": "prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "TravelGo Backend API",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "^5.21.1",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "googleapis": "^164.1.0",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.10",
+    "pdfkit": "^0.15.0",
+    "qrcode": "^1.5.3",
+    "slugify": "^1.6.6",
+    "speakeasy": "^2.0.0",
+    "twilio": "^5.10.6",
+    "validator": "^13.15.23",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "prisma": "^5.21.1"
+  }
+}

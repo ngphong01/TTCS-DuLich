@@ -1,77 +1,97 @@
-# 🚀 Hướng dẫn Setup TravelGo từ đầu
+# 🚀 Hướng dẫn Setup TravelGo
 
-Hướng dẫn chi tiết để clone và setup project TravelGo với đầy đủ dữ liệu và hình ảnh.
+Hướng dẫn chi tiết để clone và chạy project TravelGo.
+
+---
+
+## ⚡ SETUP NHANH (3 phút)
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd Travelgo
+
+# 2. Cài đặt dependencies (tự động tạo file .env)
+npm install
+
+# 3. Setup database MySQL
+mysql -u root -p123456 -e "CREATE DATABASE IF NOT EXISTS travelgo"
+mysql -u root -p123456 travelgo < backend/database/travelgo_complete.sql
+
+# 4. Chạy ứng dụng
+npm start
+```
+
+**Truy cập:**
+- Frontend: http://localhost:3001
+- Backend: http://localhost:3000
+- Admin: `phong@triennguyen.com` / `Phong@2004`
+
+---
 
 ## 📋 Yêu cầu hệ thống
 
-- **Node.js**: v18+ 
-- **MySQL**: v8.0+
-- **npm** hoặc **yarn**
-- **Git**
+| Phần mềm | Phiên bản | Ghi chú |
+|----------|-----------|---------|
+| Node.js  | 18+       | Bắt buộc |
+| MySQL    | 8.0+      | Bắt buộc |
+| npm      | 9+        | Đi kèm Node.js |
+| Git      | Bất kỳ    | Để clone repo |
 
-## 🔧 Bước 1: Clone Repository
+---
+
+## 📦 Chi tiết cài đặt
+
+### Bước 1: Clone Repository
 
 ```bash
 git clone <repository-url>
 cd Travelgo
 ```
 
-## 📦 Bước 2: Cài đặt Dependencies
+### Bước 2: Cài đặt Dependencies
 
 ```bash
-# Cài đặt dependencies cho cả backend và frontend
-npm run install:all
-
-# Hoặc cài đặt riêng:
-npm install                    # Backend
-cd frontend && npm install     # Frontend
-cd ..
+npm install
 ```
 
-## 🗄️ Bước 3: Setup Database
+Script `postinstall` sẽ tự động:
+- ✅ Tạo `backend/.env` từ `.env.example`
+- ✅ Tạo `frontend/.env` từ `.env.example`
+- ✅ Hiển thị hướng dẫn tiếp theo
 
-### Option 1: Import SQL File (Khuyến nghị - có đầy đủ dữ liệu)
+### Bước 3: Setup Database
 
+**MySQL password là `123456` (mặc định):**
 ```bash
-# 1. Tạo database MySQL
+mysql -u root -p123456 -e "CREATE DATABASE IF NOT EXISTS travelgo"
+mysql -u root -p123456 travelgo < backend/database/travelgo_complete.sql
+```
+
+**MySQL password khác:**
+```bash
+# 1. Tạo database
 mysql -u root -p
-CREATE DATABASE travelgo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-EXIT;
+> CREATE DATABASE travelgo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> EXIT;
 
-# 2. Import file SQL
-mysql -u root -p travelgo < database/travelgo_complete.sql
+# 2. Import data
+mysql -u root -p travelgo < backend/database/travelgo_complete.sql
 
-# Hoặc nếu có file extended data:
-mysql -u root -p travelgo < database/travelgo_extended_data.sql
+# 3. Cập nhật backend/.env
+# DATABASE_URL=mysql://root:YOUR_PASSWORD@localhost:3306/travelgo
 ```
 
-### Option 2: Sử dụng Prisma Migrate + Seed
+### Bước 4: Chạy ứng dụng
 
 ```bash
-# 1. Tạo file .env từ ENV_SAMPLE.txt
-cp ENV_SAMPLE.txt .env
-
-# 2. Cập nhật DATABASE_URL trong .env
-# DATABASE_URL=mysql://root:123456@localhost:3306/travelgo
-
-# 3. Chạy Prisma migrate
-npm run prisma:migrate
-
-# 4. Chạy seed để tạo dữ liệu mẫu
-npm run prisma:seed
+npm start
 ```
 
-## 🔐 Bước 4: Cấu hình Environment Variables
-
+Hoặc chạy riêng:
 ```bash
-# Copy file mẫu
-cp ENV_SAMPLE.txt .env
-
-# Chỉnh sửa .env với thông tin của bạn:
-# - DATABASE_URL: Kết nối MySQL
-# - JWT_SECRET: Secret key cho JWT (tạo random string)
-# - GEMINI_API_KEY: API key cho Gemini AI (nếu dùng)
-# - Các thông tin email, payment khác...
+npm run start:backend   # Backend: http://localhost:3000
+npm run start:frontend  # Frontend: http://localhost:3001
 ```
 
 ## 🖼️ Bước 5: Kiểm tra Hình ảnh và Logo

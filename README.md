@@ -25,33 +25,45 @@
 
 ## ⚡ Quick Start
 
-### Clone và Setup nhanh:
+### 🎯 Clone và chạy CHỈ 3 BƯỚC:
 
 ```bash
-# 1. Clone repository
+# 1️⃣ Clone repository
 git clone <repository-url>
 cd Travelgo
 
-# 2. Cài đặt dependencies
-npm run install:all
+# 2️⃣ Cài đặt dependencies (tự động setup .env)
+npm install
 
-# 3. Setup database (chọn 1 trong 2 cách)
+# 3️⃣ Setup database MySQL
+mysql -u root -p123456 -e "CREATE DATABASE IF NOT EXISTS travelgo"
+mysql -u root -p123456 travelgo < backend/database/travelgo_complete.sql
 
-# Cách 1: Import SQL file (khuyến nghị - có đầy đủ dữ liệu)
-mysql -u root -p < database/travelgo_complete.sql
+# ✅ XONG! Chạy ứng dụng:
+npm start
+```
 
-# Cách 2: Sử dụng script tự động
-npm run setup:db
+### 🌐 Truy cập:
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:3000
 
-# 4. Cấu hình .env
-cp ENV_SAMPLE.txt .env
-# Chỉnh sửa DATABASE_URL và các thông tin khác trong .env
+### 👤 Đăng nhập Admin:
+- **Email**: `phong@triennguyen.com`
+- **Password**: `Phong@2004`
 
-# 5. Kiểm tra setup (khuyến nghị)
-npm run check
+---
 
-# 6. Chạy ứng dụng
-npm run dev:all
+### 📝 Lưu ý:
+
+**Nếu MySQL password khác `123456`:**
+```bash
+# Chỉnh sửa file backend/.env
+# Đổi DATABASE_URL=mysql://root:YOUR_PASSWORD@localhost:3306/travelgo
+```
+
+**Nếu cần setup lại .env:**
+```bash
+npm run setup:env
 ```
 
 **Xem chi tiết**: [SETUP.md](./SETUP.md) - Hướng dẫn setup đầy đủ với troubleshooting
@@ -229,10 +241,16 @@ AWS S3 (File storage)
 
 ```
 Travelgo/
-├── 📂 backend (Root)
+├── 📄 package.json           # Root package (monorepo scripts)
+├── 📄 start-all.bat          # Chạy cả backend + frontend
+├── 📄 start-frontend.bat     # Chạy frontend
+│
+├── 📂 backend/               # ⭐ BACKEND API
 │   ├── index.js              # Entry point
+│   ├── package.json          # Backend dependencies
 │   ├── .env                  # Environment variables
-│   ├── 📂 routes/            # API routes (43 files)
+│   ├── start-backend.bat     # Chạy backend
+│   ├── 📂 routes/            # API routes (45+ files)
 │   │   ├── auth.js           # Authentication
 │   │   ├── destination.js    # Destinations
 │   │   ├── tour.js           # Tours
@@ -241,67 +259,44 @@ Travelgo/
 │   │   ├── booking.js        # Bookings
 │   │   ├── payment.js        # Payments
 │   │   ├── ai.js             # AI features
+│   │   ├── emailOtp.js       # OTP verification
 │   │   └── ...               # 35+ more routes
 │   ├── 📂 middleware/        # Auth, Rate limit, Cache
 │   ├── 📂 services/          # Payment gateways, AI
-│   ├── 📂 lib/               # Utilities, Prisma client
-│   └── 📂 prisma/
-│       ├── schema.prisma     # Database schema
-│       └── seed.js           # Seed data
+│   ├── 📂 lib/               # Utilities, Prisma client, Email, OTP
+│   ├── 📂 prisma/            # Database schema & seed
+│   ├── 📂 scripts/           # Setup & migration scripts
+│   ├── 📂 database/          # SQL files
+│   ├── 📂 uploads/           # User uploads (avatars, images)
+│   ├── 📂 public/            # Static files
+│   └── 📂 examples/          # Example code
 │
-├── 📂 frontend/
+├── 📂 frontend/              # ⭐ FRONTEND REACT
 │   ├── 📂 src/
 │   │   ├── App.tsx           # Main app
 │   │   ├── main.css          # Global styles
-│   │   ├── 📂 pages/         # 50+ pages
+│   │   ├── 📂 pages/         # 60+ pages
 │   │   │   ├── Home.tsx
 │   │   │   ├── Destinations.tsx
-│   │   │   ├── DestinationDetail.tsx
 │   │   │   ├── Tours.tsx
-│   │   │   ├── TourDetail.tsx
 │   │   │   ├── Hotels.tsx
-│   │   │   ├── HotelDetail.tsx
-│   │   │   ├── Categories.tsx
-│   │   │   ├── Featured.tsx
-│   │   │   ├── Stories.tsx
-│   │   │   ├── BlogList.tsx
-│   │   │   ├── BlogDetail.tsx
-│   │   │   ├── About.tsx
-│   │   │   ├── Contact.tsx
-│   │   │   ├── 📂 auth/     # Auth pages
-│   │   │   ├── 📂 account/  # User dashboard (12 pages)
-│   │   │   ├── 📂 admin/    # Admin dashboard (15+ pages)
-│   │   │   └── 📂 checkout/ # Payment pages
-│   │   ├── 📂 components/   # 35+ reusable components
-│   │   ├── 📂 layouts/      # Layout wrappers
-│   │   ├── 📂 hooks/        # Custom hooks
-│   │   ├── 📂 services/     # API services
-│   │   └── 📂 lib/          # Utils, API client
-│   ├── public/              # Static assets
+│   │   │   ├── 📂 auth/      # Auth pages
+│   │   │   ├── 📂 account/   # User dashboard (12 pages)
+│   │   │   ├── 📂 admin/     # Admin dashboard (15+ pages)
+│   │   │   └── 📂 checkout/  # Payment pages
+│   │   ├── 📂 components/    # 70+ reusable components
+│   │   ├── 📂 layouts/       # Layout wrappers
+│   │   ├── 📂 hooks/         # Custom hooks
+│   │   ├── 📂 services/      # API services
+│   │   └── 📂 lib/           # Utils, API client
+│   ├── public/               # Static assets
 │   ├── package.json
 │   └── tailwind.config.js
 │
-├── 📂 database/
-│   ├── travelgo_complete.sql      # Full database (4379 lines)
-│   ├── travelgo_schema.sql        # Schema only
-│   ├── travelgo_data.sql          # Sample data (46 destinations)
-│   └── travelgo_extended_data.sql # Extended data (43 tours, 35 hotels, 35 restaurants) ⭐ MỚI
-│
-├── 📂 uploads/              # User uploads
-│   ├── avatars/
-│   ├── destinations/
-│   ├── tours/
-│   ├── hotels/
-│   ├── restaurants/
-│   └── blogs/
-│
-└── 📄 Documentation/
-    ├── README.md                    # This file
-    ├── API_DOCUMENTATION.md
-    ├── GOOGLE_OAUTH_SETUP.md
-    ├── PAYPAL_SETUP_GUIDE.md
-    ├── AI_FEATURES_COMPLETE.md
-    └── START_HERE.md
+└── 📂 docs/                  # Documentation
+    ├── EMAIL_OTP_SYSTEM.md   # OTP system guide
+    ├── GOOGLE_APPS_SCRIPT_OTP.md
+    └── ...
 ```
 
 ---
@@ -327,6 +322,8 @@ cd travelgo
 ### 2. Cài đặt Backend
 
 ```bash
+cd backend
+
 # Install dependencies
 npm install
 
@@ -342,8 +339,6 @@ npm run prisma:migrate
 
 # Import database
 mysql -u root -p travelgo < database/travelgo_complete.sql
-# Hoặc import extended data
-mysql -u root -p travelgo < database/travelgo_extended_data.sql
 
 # Start backend
 npm start
@@ -361,6 +356,14 @@ npm install
 # Start frontend
 npm start
 # Frontend chạy tại http://localhost:3001
+```
+
+### 4. Chạy cả hai (Recommended)
+
+```bash
+# Từ thư mục root
+npm run install:all   # Cài đặt tất cả dependencies
+npm start             # Chạy cả backend + frontend
 ```
 
 ### 4. (Optional) Redis Cache
@@ -861,18 +864,18 @@ netlify deploy --prod --dir=build
 
 ## 👤 Tài khoản mặc định
 
-### Admin Account
+### Admin Accounts
 
+**Tài khoản chính:**
 ```
-Email: admin@travelgo.dev
-Password: admin123
+Email: phong@triennguyen.com
+Password: Phong@2004
 Role: ADMIN
 ```
 
-### Test User
-
+**Tài khoản phụ:**
 ```
-Email: phong@triennguyen.com
+Email: admin@travelgo.dev
 Password: admin123
 Role: ADMIN
 ```
@@ -981,7 +984,8 @@ MIT License - Xem file `LICENSE`
 
 ## 📞 Contact & Support
 
-- 📧 Email: admin@travelgo.dev
+- 📧 Email: phong@triennguyen.com (Admin chính)
+- 📧 Email: admin@travelgo.dev (Admin phụ)
 - 🌐 Website: https://travelgo.vn
 - 💬 Live Chat: Có sẵn trên website
 - 📱 Hotline: 1900 xxxx

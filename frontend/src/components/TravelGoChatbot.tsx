@@ -43,6 +43,7 @@ export default function TravelGoChatbot() {
   const userAvatarUrl = getUserAvatarUrl();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [aiProvider, setAiProvider] = useState<'gemini' | 'anthropic'>('gemini'); // Chọn AI provider
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -99,7 +100,10 @@ export default function TravelGoChatbot() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ message: userMessage.text }),
+        body: JSON.stringify({ 
+          message: userMessage.text,
+          provider: aiProvider // Gửi provider đã chọn
+        }),
       });
 
       const data = await response.json();
@@ -344,9 +348,23 @@ export default function TravelGoChatbot() {
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Powered by Google Gemini AI
-        </p>
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500">AI Provider:</label>
+            <select
+              value={aiProvider}
+              onChange={(e) => setAiProvider(e.target.value as 'gemini' | 'anthropic')}
+              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={isLoading}
+            >
+              <option value="gemini">Gemini</option>
+              <option value="anthropic">Anthropic</option>
+            </select>
+          </div>
+          <p className="text-xs text-gray-500">
+            Powered by {aiProvider === 'anthropic' ? 'Anthropic Claude' : 'Google Gemini AI'}
+          </p>
+        </div>
       </div>
     </div>
   );
